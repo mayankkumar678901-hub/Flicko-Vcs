@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { GitBranch, Plus, User as UserIcon, LogOut, Code } from 'lucide-react';
+import { GitBranch, Plus, User as UserIcon, LogOut, Code, Sparkles } from 'lucide-react';
 import { User, api } from '@/lib/api';
 
 export default function Navbar() {
@@ -27,11 +27,17 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-github-card border-b border-github-border text-github-text px-6 py-3 flex items-center justify-between">
+    <nav className="bg-[#121722]/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800/80 text-slate-200 px-6 py-3.5 flex items-center justify-between shadow-lg">
       <div className="flex items-center space-x-6">
-        <Link href="/" className="flex items-center space-x-2 font-bold text-lg text-white hover:text-github-blue">
-          <Code className="w-6 h-6 text-github-blue" />
-          <span>Flicko</span>
+        <Link href="/" className="flex items-center space-x-2.5 font-bold text-lg text-white group">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 via-sky-500 to-emerald-400 p-0.5 shadow-md shadow-indigo-500/20 group-hover:scale-105 transition">
+            <div className="w-full h-full bg-[#0a0d14] rounded-[7px] flex items-center justify-center">
+              <Code className="w-4 h-4 text-sky-400" />
+            </div>
+          </div>
+          <span className="bg-gradient-to-r from-white via-slate-200 to-sky-400 bg-clip-text text-transparent font-extrabold tracking-tight text-xl">
+            Flicko
+          </span>
         </Link>
       </div>
 
@@ -40,22 +46,22 @@ export default function Navbar() {
           <>
             <Link
               href="/new"
-              className="flex items-center space-x-1 bg-github-accent text-white text-xs px-3 py-1.5 rounded-md hover:bg-opacity-90 font-medium"
+              className="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs px-3.5 py-1.5 rounded-lg hover:brightness-110 font-semibold shadow-md shadow-emerald-500/20 transition"
             >
               <Plus className="w-4 h-4" />
               <span>New Repo</span>
             </Link>
-            <div className="flex items-center space-x-2 text-sm">
+            <div className="flex items-center space-x-2 text-sm bg-slate-800/50 border border-slate-700/50 px-3 py-1 rounded-full">
               <img
                 src={user.avatarUrl || 'https://api.dicebear.com/7.x/identicon/svg?seed=user'}
                 alt={user.username}
-                className="w-7 h-7 rounded-full bg-github-border"
+                className="w-6 h-6 rounded-full bg-slate-700"
               />
-              <span className="font-semibold text-gray-200">{user.username}</span>
+              <span className="font-semibold text-slate-200 text-xs">{user.username}</span>
             </div>
             <button
               onClick={handleLogout}
-              className="p-1.5 text-github-muted hover:text-white rounded-md transition"
+              className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800/50 transition"
               title="Logout"
             >
               <LogOut className="w-4 h-4" />
@@ -63,12 +69,12 @@ export default function Navbar() {
           </>
         ) : (
           <div className="flex items-center space-x-3 text-sm">
-            <Link href="/login" className="text-github-muted hover:text-white">
+            <Link href="/login" className="text-slate-400 hover:text-white font-medium transition">
               Sign In
             </Link>
             <Link
               href="/register"
-              className="bg-github-accent text-white px-3 py-1.5 rounded-md hover:bg-opacity-90 font-medium"
+              className="bg-gradient-to-r from-indigo-500 to-sky-500 text-white px-3.5 py-1.5 rounded-lg hover:brightness-110 font-semibold shadow-md shadow-indigo-500/20 transition text-xs"
             >
               Sign Up
             </Link>
