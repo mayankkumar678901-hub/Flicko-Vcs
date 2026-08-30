@@ -34,7 +34,7 @@ export default function LoginPage() {
       <div className="bg-github-card border border-github-border rounded-lg p-6 shadow-xl">
         <div className="text-center mb-6">
           <LogIn className="w-8 h-8 text-github-blue mx-auto mb-2" />
-          <h2 className="text-xl font-bold text-white">Sign In to Mini-VCS</h2>
+          <h2 className="text-xl font-bold text-white">Sign In to Flicko</h2>
         </div>
 
         {error && (
@@ -80,7 +80,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-xs text-github-muted text-center mt-6">
-          New to Mini-VCS?{' '}
+          New to Flicko?{' '}
           <Link href="/register" className="text-github-blue hover:underline">
             Create an account
           </Link>

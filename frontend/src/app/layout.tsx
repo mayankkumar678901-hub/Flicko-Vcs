@@ -2,7 +2,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 
 export const metadata = {
-  title: 'Mini-VCS | Web Version Control Platform',
+  title: 'Flicko | Web Version Control Platform',
   description: 'Lightweight web-based Version Control System platform',
 };
 

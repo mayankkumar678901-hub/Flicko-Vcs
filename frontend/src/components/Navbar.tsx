@@ -31,7 +31,7 @@ export default function Navbar() {
       <div className="flex items-center space-x-6">
         <Link href="/" className="flex items-center space-x-2 font-bold text-lg text-white hover:text-github-blue">
           <Code className="w-6 h-6 text-github-blue" />
-          <span>Mini-VCS</span>
+          <span>Flicko</span>
         </Link>
       </div>
 

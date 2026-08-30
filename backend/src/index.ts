@@ -16,9 +16,9 @@ app.use('/api', routes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'VCS API', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', service: 'Flicko API', timestamp: new Date().toISOString() });
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 VCS Backend Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Flicko Backend Server running on http://localhost:${PORT}`);
 });
