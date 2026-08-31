@@ -17,15 +17,11 @@ export class AuthController {
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
 
-      const existingUser = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { username: cleanUsername },
-            { email: cleanEmail },
-            { username: cleanUsername.toLowerCase() },
-          ],
-        },
-      });
+      // Check case-insensitive existence across all users
+      const allUsers = await prisma.user.findMany();
+      const existingUser = allUsers.find(
+        (u) => u.username.toLowerCase() === cleanUsername.toLowerCase() || u.email.toLowerCase() === cleanEmail
+      );
 
       if (existingUser) {
         return res.status(400).json({ error: 'Username or email already taken' });
@@ -66,19 +62,14 @@ export class AuthController {
         return res.status(400).json({ error: 'Email/Username and password are required' });
       }
 
-      const cleanInput = emailOrUsername.trim();
+      const cleanInput = emailOrUsername.trim().toLowerCase();
       const cleanPassword = password.trim();
 
-      const user = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { email: cleanInput },
-            { username: cleanInput },
-            { email: cleanInput.toLowerCase() },
-            { username: cleanInput.toLowerCase() },
-          ],
-        },
-      });
+      // Fetch all users and compare lowercased for 100% case-insensitivity
+      const allUsers = await prisma.user.findMany();
+      const user = allUsers.find(
+        (u) => u.username.toLowerCase() === cleanInput || u.email.toLowerCase() === cleanInput
+      );
 
       if (!user) {
         return res.status(401).json({ error: 'Invalid credentials' });
