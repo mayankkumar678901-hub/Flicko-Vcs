@@ -8,20 +8,21 @@ import { AuthRequest } from '../middleware/auth';
 
 const PERSISTENT_FILE = path.resolve(__dirname, '../data/persistent_users.json');
 
+function getPersistentUsers(): any[] {
+  try {
+    if (fs.existsSync(PERSISTENT_FILE)) {
+      return JSON.parse(fs.readFileSync(PERSISTENT_FILE, 'utf8'));
+    }
+  } catch {}
+  return [];
+}
+
 function savePersistentUser(user: { username: string; email: string; passwordHash: string; avatarUrl?: string }) {
   try {
     const dir = path.dirname(PERSISTENT_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    let list: any[] = [];
-    if (fs.existsSync(PERSISTENT_FILE)) {
-      try {
-        list = JSON.parse(fs.readFileSync(PERSISTENT_FILE, 'utf8'));
-      } catch {
-        list = [];
-      }
-    }
-
+    let list = getPersistentUsers();
     const idx = list.findIndex((u: any) => u.username.toLowerCase() === user.username.toLowerCase());
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...user };
@@ -48,14 +49,26 @@ export class AuthController {
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
 
-      // Check case-insensitive existence across all users
-      const allUsers = await prisma.user.findMany();
-      const existingUser = allUsers.find(
-        (u) => u.username.toLowerCase() === cleanUsername.toLowerCase() || u.email.toLowerCase() === cleanEmail
-      );
+      // Fetch users from DB and persistent backups
+      const dbUsers = await prisma.user.findMany();
+      const backupUsers = getPersistentUsers();
 
-      if (existingUser) {
-        return res.status(400).json({ error: 'Username or email already taken' });
+      // Check if email already registered
+      const emailExists =
+        dbUsers.some((u) => u.email.toLowerCase() === cleanEmail) ||
+        backupUsers.some((u) => u.email.toLowerCase() === cleanEmail);
+
+      if (emailExists) {
+        return res.status(400).json({ error: 'This email is already registered. Please sign in or use a different email.' });
+      }
+
+      // Check if username already taken
+      const usernameExists =
+        dbUsers.some((u) => u.username.toLowerCase() === cleanUsername.toLowerCase()) ||
+        backupUsers.some((u) => u.username.toLowerCase() === cleanUsername.toLowerCase());
+
+      if (usernameExists) {
+        return res.status(400).json({ error: 'This username is already taken. Please choose a different username.' });
       }
 
       const passwordHash = await bcrypt.hash(cleanPassword, 10);
@@ -68,7 +81,7 @@ export class AuthController {
         },
       });
 
-      // Backup to persistent storage so redeploys never erase accounts
+      // Backup to persistent storage
       savePersistentUser({
         username: user.username,
         email: user.email,
@@ -111,12 +124,12 @@ export class AuthController {
       );
 
       if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return res.status(401).json({ error: 'Invalid credentials. User not found.' });
       }
 
       const isPasswordValid = await bcrypt.compare(cleanPassword, user.passwordHash);
       if (!isPasswordValid) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return res.status(401).json({ error: 'Invalid credentials. Password incorrect.' });
       }
 
       const secret = process.env.JWT_SECRET || 'super-secret-vcs-jwt-key-2026';
@@ -183,7 +196,7 @@ export class AuthController {
         const existing = await prisma.user.findFirst({
           where: { email: cleanEmail, NOT: { id: user.id } },
         });
-        if (existing) return res.status(400).json({ error: 'Email already in use' });
+        if (existing) return res.status(400).json({ error: 'This email is already in use by another account.' });
         updateData.email = cleanEmail;
       }
 
