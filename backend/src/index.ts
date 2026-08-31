@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import routes from './routes';
+import { SeedService } from './services/seed.service';
 
 dotenv.config();
 
@@ -19,6 +20,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'Flicko API', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Flicko Backend Server running on http://localhost:${PORT}`);
+  // Run seed data auto-restoration
+  await SeedService.ensureSeedData();
 });
