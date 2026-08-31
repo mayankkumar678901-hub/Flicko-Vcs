@@ -178,10 +178,7 @@ export class GitService {
   static async getCommits(repoPath: string, ref: string = 'main', limit: number = 50): Promise<CommitItem[]> {
     const git: SimpleGit = simpleGit(repoPath);
     try {
-      const log = await git.log({
-        from: ref,
-        maxCount: limit,
-      });
+      const log = await git.log([ref, '-n', `${limit}`]);
 
       return log.all.map(c => ({
         sha: c.hash,
