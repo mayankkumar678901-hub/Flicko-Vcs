@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api, Repository, TreeItem, User, CommitItem } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
 import FileTree from '@/components/FileTree';
@@ -10,9 +10,10 @@ import ReadmeViewer from '@/components/ReadmeViewer';
 import LivePreviewModal from '@/components/LivePreviewModal';
 import TimeTravelSlider from '@/components/TimeTravelSlider';
 import SlidingFileDrawer from '@/components/SlidingFileDrawer';
-import { GitCommit, GitBranch, Plus, FileCode, Clock, Play, Sparkles, Lock, ShieldAlert } from 'lucide-react';
+import { GitCommit, GitBranch, Plus, FileCode, Clock, Play, Sparkles, Lock, Trash2, AlertTriangle, X } from 'lucide-react';
 
 export default function RepoRootPage({ params }: { params: { owner: string; repo: string } }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const ref = searchParams.get('ref') || 'main';
 
@@ -30,6 +31,12 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
   // Sliding Drawer State
   const [drawerFilePath, setDrawerFilePath] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Delete Repo Modal State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [confirmName, setConfirmName] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     setActiveRef(ref);
@@ -120,6 +127,25 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
     setIsDrawerOpen(true);
   };
 
+  const handleDeleteRepo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (confirmName !== params.repo) {
+      setDeleteError(`Please type "${params.repo}" to confirm deletion.`);
+      return;
+    }
+
+    setDeleting(true);
+    setDeleteError('');
+
+    try {
+      await api.delete(`/repos/${params.owner}/${params.repo}`);
+      window.location.href = '/';
+    } catch (err: any) {
+      setDeleteError(err.response?.data?.error || 'Failed to delete repository');
+      setDeleting(false);
+    }
+  };
+
   if (loading && !tree.length) {
     return <div className="py-12 text-center text-slate-400 text-sm">Loading repository...</div>;
   }
@@ -164,13 +190,23 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
           )}
 
           {isOwner ? (
-            <Link
-              href={`/${params.owner}/${params.repo}/edit/${ref}/new-file.txt`}
-              className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add File</span>
-            </Link>
+            <>
+              <Link
+                href={`/${params.owner}/${params.repo}/edit/${ref}/new-file.txt`}
+                className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add File</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="p-1.5 bg-slate-800/80 hover:bg-red-950/60 border border-slate-700 hover:border-red-800 text-slate-400 hover:text-red-400 rounded-lg text-xs transition"
+                title="Delete Repository"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           ) : (
             <span
               className="flex items-center space-x-1 bg-slate-900 border border-slate-800 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed"
@@ -251,6 +287,78 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
         refName={activeRef}
         filePath={drawerFilePath}
       />
+
+      {/* Delete Repository Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#121722] border border-red-800/80 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center space-x-2 text-red-400 font-bold text-sm">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Delete Repository</span>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteError('');
+                  setConfirmName('');
+                }}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {deleteError && (
+              <div className="bg-red-950/60 border border-red-800 text-red-300 text-xs p-3 rounded-lg">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="space-y-2 text-xs text-slate-300">
+              <p>
+                Are you sure you want to permanently delete <strong className="text-white font-mono">{params.repo}</strong>?
+              </p>
+              <p className="text-slate-400">
+                This will delete all files, commit history, and branches associated with this repository. This action cannot be undone.
+              </p>
+            </div>
+
+            <form onSubmit={handleDeleteRepo} className="space-y-3 pt-2">
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">
+                  Type <strong className="text-white font-mono">{params.repo}</strong> to confirm:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={confirmName}
+                  onChange={(e) => setConfirmName(e.target.value)}
+                  placeholder={params.repo}
+                  className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2 rounded-lg text-xs font-mono focus:outline-none focus:border-red-500"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleting || confirmName !== params.repo}
+                  className="bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition shadow"
+                >
+                  {deleting ? 'Deleting...' : 'Permanently Delete'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
