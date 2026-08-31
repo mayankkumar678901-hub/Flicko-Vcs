@@ -20,7 +20,7 @@ export class GitController {
       await GitService.initRepository(repo.storagePath, repo.name, repo.description || '', repo.defaultBranch);
     }
 
-    return { repo, path: repo.storagePath };
+    return { repo, path: repo.storagePath, ownerId: owner.id };
   }
 
   static async getBranches(req: AuthRequest, res: Response) {
@@ -37,12 +37,20 @@ export class GitController {
 
   static async createBranch(req: AuthRequest, res: Response) {
     try {
+      if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+
       const { owner, repo } = req.params;
       const { name, startPoint } = req.body;
 
       if (!name) return res.status(400).json({ error: 'Branch name is required' });
 
-      const { path: repoPath } = await GitController.getRepoPath(owner, repo);
+      const { path: repoPath, ownerId } = await GitController.getRepoPath(owner, repo);
+
+      // Check repository write permissions (owner check)
+      if (req.user.userId !== ownerId) {
+        return res.status(403).json({ error: 'Permission denied: Only the repository owner can create branches.' });
+      }
+
       await GitService.createBranch(repoPath, name, startPoint || 'HEAD');
 
       return res.status(201).json({ message: `Branch ${name} created successfully` });
@@ -53,8 +61,15 @@ export class GitController {
 
   static async deleteBranch(req: AuthRequest, res: Response) {
     try {
+      if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+
       const { owner, repo, branch } = req.params;
-      const { path: repoPath } = await GitController.getRepoPath(owner, repo);
+      const { path: repoPath, ownerId } = await GitController.getRepoPath(owner, repo);
+
+      // Check repository write permissions (owner check)
+      if (req.user.userId !== ownerId) {
+        return res.status(403).json({ error: 'Permission denied: Only the repository owner can delete branches.' });
+      }
 
       await GitService.deleteBranch(repoPath, branch);
       return res.json({ message: `Branch ${branch} deleted` });
@@ -106,7 +121,13 @@ export class GitController {
         return res.status(400).json({ error: 'Path, content, and commit message are required' });
       }
 
-      const { path: repoPath, repo: repoDoc } = await GitController.getRepoPath(owner, repo);
+      const { path: repoPath, repo: repoDoc, ownerId } = await GitController.getRepoPath(owner, repo);
+
+      // Check repository write permissions (owner check)
+      if (req.user.userId !== ownerId) {
+        return res.status(403).json({ error: 'Permission denied: You do not have edit/write permissions for this repository.' });
+      }
+
       const targetBranch = branch || repoDoc.defaultBranch;
 
       // Find logged in user email

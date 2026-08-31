@@ -3,18 +3,19 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { api, Repository, TreeItem } from '@/lib/api';
+import { api, Repository, TreeItem, User } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
 import FileTree from '@/components/FileTree';
 import ReadmeViewer from '@/components/ReadmeViewer';
 import LivePreviewModal from '@/components/LivePreviewModal';
-import { GitCommit, GitBranch, Plus, FileCode, Clock, Play, Sparkles } from 'lucide-react';
+import { GitCommit, GitBranch, Plus, FileCode, Clock, Play, Sparkles, Lock, ShieldAlert } from 'lucide-react';
 
 export default function RepoRootPage({ params }: { params: { owner: string; repo: string } }) {
   const searchParams = useSearchParams();
   const ref = searchParams.get('ref') || 'main';
 
   const [repoData, setRepoData] = useState<Repository | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [tree, setTree] = useState<TreeItem[]>([]);
   const [branches, setBranches] = useState<string[]>([]);
   const [readme, setReadme] = useState<string | null>(null);
@@ -35,6 +36,17 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
         setRepoData(repoRes.data.repo);
         setBranches(branchRes.data.branches.all);
         setTree(treeRes.data.tree);
+
+        // Fetch logged in user to check permissions
+        const token = localStorage.getItem('vcs_token');
+        if (token) {
+          try {
+            const meRes = await api.get('/auth/me');
+            setCurrentUser(meRes.data.user);
+          } catch {
+            setCurrentUser(null);
+          }
+        }
 
         // Check if repo has HTML files to enable Live Preview
         const hasHtml = treeRes.data.tree.some((item: TreeItem) =>
@@ -72,6 +84,8 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
     return <div className="py-12 text-center text-red-400">Repository not found.</div>;
   }
 
+  const isOwner = currentUser && repoData.owner.id === currentUser.id;
+
   return (
     <div className="space-y-6">
       {/* Repo Title & Header */}
@@ -84,6 +98,12 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
             <span className="text-xs border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 rounded-full text-slate-300 capitalize font-medium">
               {repoData.isPrivate ? 'Private' : 'Public'}
             </span>
+            {!isOwner && (
+              <span className="text-[11px] border border-amber-500/30 bg-amber-500/10 text-amber-300 px-2.5 py-0.5 rounded-full flex items-center space-x-1 font-semibold">
+                <Lock className="w-3 h-3" />
+                <span>Read-Only</span>
+              </span>
+            )}
           </div>
           <p className="text-slate-400 text-xs mt-1">{repoData.description || 'No description provided.'}</p>
         </div>
@@ -99,13 +119,23 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
             </button>
           )}
 
-          <Link
-            href={`/${params.owner}/${params.repo}/edit/${ref}/new-file.txt`}
-            className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add File</span>
-          </Link>
+          {isOwner ? (
+            <Link
+              href={`/${params.owner}/${params.repo}/edit/${ref}/new-file.txt`}
+              className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add File</span>
+            </Link>
+          ) : (
+            <span
+              className="flex items-center space-x-1 bg-slate-900 border border-slate-800 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed"
+              title="Only repository owner can add or edit files"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Read-Only Access</span>
+            </span>
+          )}
         </div>
       </div>
 
