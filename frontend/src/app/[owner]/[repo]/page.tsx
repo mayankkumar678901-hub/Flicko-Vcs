@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { api, Repository, TreeItem, User } from '@/lib/api';
+import { api, Repository, TreeItem, User, CommitItem } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
 import FileTree from '@/components/FileTree';
 import ReadmeViewer from '@/components/ReadmeViewer';
 import LivePreviewModal from '@/components/LivePreviewModal';
+import TimeTravelSlider from '@/components/TimeTravelSlider';
+import SlidingFileDrawer from '@/components/SlidingFileDrawer';
 import { GitCommit, GitBranch, Plus, FileCode, Clock, Play, Sparkles, Lock, ShieldAlert } from 'lucide-react';
 
 export default function RepoRootPage({ params }: { params: { owner: string; repo: string } }) {
@@ -18,65 +20,107 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [tree, setTree] = useState<TreeItem[]>([]);
   const [branches, setBranches] = useState<string[]>([]);
+  const [commits, setCommits] = useState<CommitItem[]>([]);
+  const [activeRef, setActiveRef] = useState<string>(ref);
   const [readme, setReadme] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasWebPreview, setHasWebPreview] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
+  // Sliding Drawer State
+  const [drawerFilePath, setDrawerFilePath] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   useEffect(() => {
-    async function loadRepo() {
-      try {
-        setLoading(true);
-        const [repoRes, branchRes, treeRes] = await Promise.all([
-          api.get(`/repos/${params.owner}/${params.repo}`),
-          api.get(`/git/${params.owner}/${params.repo}/branches`),
-          api.get(`/git/${params.owner}/${params.repo}/tree?ref=${ref}`),
-        ]);
-
-        setRepoData(repoRes.data.repo);
-        setBranches(branchRes.data.branches.all);
-        setTree(treeRes.data.tree);
-
-        // Fetch logged in user to check permissions
-        const token = localStorage.getItem('vcs_token');
-        if (token) {
-          try {
-            const meRes = await api.get('/auth/me');
-            setCurrentUser(meRes.data.user);
-          } catch {
-            setCurrentUser(null);
-          }
-        }
-
-        // Check if repo has HTML files to enable Live Preview
-        const hasHtml = treeRes.data.tree.some((item: TreeItem) =>
-          item.name.toLowerCase().endsWith('.html')
-        );
-        setHasWebPreview(hasHtml);
-
-        // Check if README.md exists in root
-        const readmeItem = treeRes.data.tree.find(
-          (item: TreeItem) => item.name.toLowerCase() === 'readme.md'
-        );
-        if (readmeItem) {
-          const blobRes = await api.get(
-            `/git/${params.owner}/${params.repo}/blob?ref=${ref}&path=${readmeItem.name}`
-          );
-          setReadme(blobRes.data.content);
-        } else {
-          setReadme(null);
-        }
-      } catch (err) {
-        console.error('Failed to load repo data', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadRepo();
+    setActiveRef(ref);
+    loadRepo(ref);
   }, [params.owner, params.repo, ref]);
 
-  if (loading) {
+  const loadRepo = async (currentRef: string) => {
+    try {
+      setLoading(true);
+      const [repoRes, branchRes, treeRes, commitsRes] = await Promise.all([
+        api.get(`/repos/${params.owner}/${params.repo}`),
+        api.get(`/git/${params.owner}/${params.repo}/branches`),
+        api.get(`/git/${params.owner}/${params.repo}/tree?ref=${currentRef}`),
+        api.get(`/git/${params.owner}/${params.repo}/commits?ref=${currentRef}`).catch(() => ({ data: { commits: [] } })),
+      ]);
+
+      setRepoData(repoRes.data.repo);
+      setBranches(branchRes.data.branches.all);
+      setTree(treeRes.data.tree);
+      setCommits(commitsRes.data.commits || []);
+
+      // Fetch logged in user to check permissions
+      const token = localStorage.getItem('vcs_token');
+      if (token) {
+        try {
+          const meRes = await api.get('/auth/me');
+          setCurrentUser(meRes.data.user);
+        } catch {
+          setCurrentUser(null);
+        }
+      }
+
+      // Check if repo has HTML files to enable Live Preview
+      const hasHtml = treeRes.data.tree.some((item: TreeItem) =>
+        item.name.toLowerCase().endsWith('.html')
+      );
+      setHasWebPreview(hasHtml);
+
+      // Check if README.md exists in root
+      const readmeItem = treeRes.data.tree.find(
+        (item: TreeItem) => item.name.toLowerCase() === 'readme.md'
+      );
+      if (readmeItem) {
+        const blobRes = await api.get(
+          `/git/${params.owner}/${params.repo}/blob?ref=${currentRef}&path=${readmeItem.name}`
+        );
+        setReadme(blobRes.data.content);
+      } else {
+        setReadme(null);
+      }
+    } catch (err) {
+      console.error('Failed to load repo data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Time Travel Handler
+  const handleTimeTravelCommit = async (sha: string) => {
+    setActiveRef(sha);
+    try {
+      const treeRes = await api.get(`/git/${params.owner}/${params.repo}/tree?ref=${sha}`);
+      setTree(treeRes.data.tree);
+
+      const hasHtml = treeRes.data.tree.some((item: TreeItem) =>
+        item.name.toLowerCase().endsWith('.html')
+      );
+      setHasWebPreview(hasHtml);
+
+      const readmeItem = treeRes.data.tree.find(
+        (item: TreeItem) => item.name.toLowerCase() === 'readme.md'
+      );
+      if (readmeItem) {
+        const blobRes = await api.get(
+          `/git/${params.owner}/${params.repo}/blob?ref=${sha}&path=${readmeItem.name}`
+        );
+        setReadme(blobRes.data.content);
+      } else {
+        setReadme(null);
+      }
+    } catch (err) {
+      console.error('Time travel fetch failed', err);
+    }
+  };
+
+  const handleOpenDrawer = (filePath: string) => {
+    setDrawerFilePath(filePath);
+    setIsDrawerOpen(true);
+  };
+
+  if (loading && !tree.length) {
     return <div className="py-12 text-center text-slate-400 text-sm">Loading repository...</div>;
   }
 
@@ -139,6 +183,15 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
         </div>
       </div>
 
+      {/* Time-Travel Commit History Slider */}
+      {commits.length > 1 && (
+        <TimeTravelSlider
+          commits={commits}
+          selectedSha={activeRef}
+          onSelectCommit={handleTimeTravelCommit}
+        />
+      )}
+
       {/* Bar: Branch Selector & Commits Link */}
       <div className="flex items-center justify-between">
         <BranchSelector
@@ -170,9 +223,10 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
       <FileTree
         owner={params.owner}
         repo={params.repo}
-        refName={ref}
+        refName={activeRef}
         items={tree}
         currentPath=""
+        onPreviewFile={handleOpenDrawer}
       />
 
       {/* README Viewer */}
@@ -184,8 +238,18 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
         onClose={() => setShowPreviewModal(false)}
         owner={params.owner}
         repo={params.repo}
-        refName={ref}
+        refName={activeRef}
         tree={tree}
+      />
+
+      {/* Sliding Window File Drawer */}
+      <SlidingFileDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        owner={params.owner}
+        repo={params.repo}
+        refName={activeRef}
+        filePath={drawerFilePath}
       />
     </div>
   );
