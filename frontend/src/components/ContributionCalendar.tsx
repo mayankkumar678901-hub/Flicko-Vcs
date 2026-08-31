@@ -1,24 +1,30 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Flame, Calendar, Trophy, Zap, CheckCircle2, ChevronRight, BarChart2 } from 'lucide-react';
+import { Flame, Calendar, Trophy, Zap, CheckCircle2 } from 'lucide-react';
 
-interface DayActivity {
-  date: string;
+interface MonthData {
+  name: string; // e.g. "August"
+  year: number;
+  totalDays: number;
+  weeks: (DayItem | null)[][]; // 7 rows (Sun..Sat) x weeks in month
+  totalActivities: number;
+}
+
+interface DayItem {
+  date: string; // YYYY-MM-DD
+  dayNumber: number; // 1..31
+  dayOfWeek: number; // 0..6
   count: number;
   isToday: boolean;
-  dayOfWeek: number; // 0 (Sun) to 6 (Sat)
-  monthName: string; // e.g. "August"
-  monthIndex: number; // 0-11
 }
 
 export default function ContributionCalendar({ username }: { username?: string }) {
   const [activities, setActivities] = useState<{ [dateStr: string]: number }>({});
-  const [hoveredDay, setHoveredDay] = useState<{ date: string; count: number } | null>(null);
+  const [hoveredDay, setHoveredDay] = useState<{ date: string; count: number; dayNumber: number } | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
   useEffect(() => {
-    // Generate or fetch login and commit activity data from localStorage/session
     const storageKey = `flicko_activity_${username || 'user'}`;
     let saved: Record<string, number> = {};
     try {
@@ -28,7 +34,7 @@ export default function ContributionCalendar({ username }: { username?: string }
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
-    saved[todayStr] = (saved[todayStr] || 0) + 1; // Mark today's login!
+    saved[todayStr] = (saved[todayStr] || 0) + 1; // Mark today's login
     localStorage.setItem(storageKey, JSON.stringify(saved));
     setActivities(saved);
   }, [username]);
@@ -42,45 +48,61 @@ export default function ContributionCalendar({ username }: { username?: string }
     'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
   ];
 
-  // Generate 18 weeks (126 days) of calendar history
-  const generateDays = (): DayActivity[] => {
-    const days: DayActivity[] = [];
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+  // Generate the last 5 full calendar months strictly aligned to their dates
+  const generateMonths = (): MonthData[] => {
+    const months: MonthData[] = [];
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
 
-    const totalDays = 18 * 7; // 18 weeks = 126 days
-    for (let i = totalDays - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const count = activities[dateStr] || 0;
-      days.push({
-        date: dateStr,
-        count,
-        isToday: dateStr === todayStr,
-        dayOfWeek: d.getDay(),
-        monthName: fullMonthNames[d.getMonth()],
-        monthIndex: d.getMonth(),
+    for (let mOffset = 4; mOffset >= 0; mOffset--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - mOffset, 1);
+      const year = d.getFullYear();
+      const monthIdx = d.getMonth();
+      const monthName = fullMonthNames[monthIdx];
+      const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+
+      // Build 7 rows x weeks grid strictly for this month
+      const weekCols: (DayItem | null)[][] = [];
+      let currentWeek: (DayItem | null)[] = new Array(7).fill(null);
+      let totalActivities = 0;
+
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const dayDate = new Date(year, monthIdx, dayNum);
+        const dayOfWeek = dayDate.getDay(); // 0 = Sun, 6 = Sat
+        const dateStr = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        const count = activities[dateStr] || 0;
+        totalActivities += count;
+
+        currentWeek[dayOfWeek] = {
+          date: dateStr,
+          dayNumber: dayNum,
+          dayOfWeek,
+          count,
+          isToday: dateStr === todayStr,
+        };
+
+        // If Saturday or last day of month, push week column and start next
+        if (dayOfWeek === 6 || dayNum === daysInMonth) {
+          weekCols.push(currentWeek);
+          currentWeek = new Array(7).fill(null);
+        }
+      }
+
+      months.push({
+        name: monthName,
+        year,
+        totalDays: daysInMonth,
+        weeks: weekCols,
+        totalActivities,
       });
     }
-    return days;
+
+    return months;
   };
 
-  const days = generateDays();
+  const months = generateMonths();
 
-  // Group into columns of 7 days (weeks)
-  const weeks: DayActivity[][] = [];
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7));
-  }
-
-  // Calculate Monthly Breakdown stats
-  const monthlyStats: { [month: string]: number } = {};
-  days.forEach((day) => {
-    monthlyStats[day.monthName] = (monthlyStats[day.monthName] || 0) + (day.count > 0 ? day.count : 0);
-  });
-
-  // Calculate Streaks
+  // Calculate Streak
   const calculateStreak = () => {
     let currentStreak = 0;
     let maxStreak = 0;
@@ -101,13 +123,9 @@ export default function ContributionCalendar({ username }: { username?: string }
       }
     }
 
-    days.forEach((day) => {
-      if (day.count > 0) {
-        tempStreak++;
-        if (tempStreak > maxStreak) maxStreak = tempStreak;
-      } else {
-        tempStreak = 0;
-      }
+    Object.keys(activities).forEach(() => {
+      tempStreak++;
+      if (tempStreak > maxStreak) maxStreak = tempStreak;
     });
 
     return {
@@ -119,29 +137,18 @@ export default function ContributionCalendar({ username }: { username?: string }
 
   const streak = calculateStreak();
 
-  const getColorClass = (count: number, isToday: boolean, monthName: string) => {
+  const getColorClass = (day: DayItem | null, monthName: string) => {
+    if (!day) return 'bg-transparent border-transparent cursor-default';
     if (selectedMonth !== 'all' && selectedMonth !== monthName) {
       return 'bg-slate-900/40 opacity-20';
     }
-    if (count >= 5) return 'bg-emerald-400 shadow-sm shadow-emerald-400/40';
-    if (count >= 3) return 'bg-emerald-500';
-    if (count >= 2) return 'bg-emerald-600';
-    if (count >= 1) return 'bg-emerald-800/90';
-    if (isToday) return 'bg-slate-700 border border-emerald-500/60 animate-pulse';
-    return 'bg-slate-800/60 hover:bg-slate-700/80';
+    if (day.count >= 5) return 'bg-emerald-400 shadow-sm shadow-emerald-400/40';
+    if (day.count >= 3) return 'bg-emerald-500';
+    if (day.count >= 2) return 'bg-emerald-600';
+    if (day.count >= 1) return 'bg-emerald-800/90';
+    if (day.isToday) return 'bg-slate-700 border border-emerald-500/60 animate-pulse';
+    return 'bg-slate-800/70 hover:bg-slate-700';
   };
-
-  // Group weeks by month for clear gaps
-  const monthsGrouped: { monthName: string; weeks: DayActivity[][] }[] = [];
-  weeks.forEach((week) => {
-    const primaryMonth = week[0]?.monthName || 'Month';
-    const existing = monthsGrouped.find((m) => m.monthName === primaryMonth);
-    if (existing) {
-      existing.weeks.push(week);
-    } else {
-      monthsGrouped.push({ monthName: primaryMonth, weeks: [week] });
-    }
-  });
 
   return (
     <div className="bg-[#121722] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5">
@@ -153,7 +160,7 @@ export default function ContributionCalendar({ username }: { username?: string }
           </div>
           <div>
             <h3 className="font-extrabold text-white text-base">Daily Login & Progress Track Calendar</h3>
-            <p className="text-xs text-slate-400">Track your daily streak, attendance, and repository milestones</p>
+            <p className="text-xs text-slate-400">Track your daily streak and progress month-by-month</p>
           </div>
         </div>
 
@@ -171,11 +178,11 @@ export default function ContributionCalendar({ username }: { username?: string }
         </div>
       </div>
 
-      {/* Full Month Filter Navigation */}
+      {/* Month Filter Tabs */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
         <span className="text-slate-400 font-bold text-xs flex items-center space-x-1 pr-1">
           <Calendar className="w-3.5 h-3.5 text-sky-400" />
-          <span>Filter by Month:</span>
+          <span>Select Month:</span>
         </span>
         <button
           onClick={() => setSelectedMonth('all')}
@@ -187,32 +194,32 @@ export default function ContributionCalendar({ username }: { username?: string }
         >
           All Months
         </button>
-        {Object.keys(monthlyStats).map((mName) => (
+        {months.map((m) => (
           <button
-            key={mName}
-            onClick={() => setSelectedMonth(mName === selectedMonth ? 'all' : mName)}
+            key={m.name}
+            onClick={() => setSelectedMonth(m.name === selectedMonth ? 'all' : m.name)}
             className={`px-3 py-1 rounded-full text-xs font-bold transition flex items-center space-x-1.5 ${
-              selectedMonth === mName
+              selectedMonth === m.name
                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
                 : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
-            <span>{mName}</span>
-            {monthlyStats[mName] > 0 && (
+            <span>{m.name}</span>
+            {m.totalActivities > 0 && (
               <span className="text-[10px] bg-black/30 px-1.5 py-0.5 rounded-full font-mono font-bold">
-                {monthlyStats[mName]}
+                {m.totalActivities}
               </span>
             )}
           </button>
         ))}
       </div>
 
-      {/* Interactive Spacious Calendar Heatmap Grid */}
+      {/* Calendar Grid with Grouped Month Blocks */}
       <div className="space-y-2">
         <div className="overflow-x-auto pb-3 pt-1">
-          <div className="inline-flex min-w-[700px]">
+          <div className="inline-flex min-w-[760px] items-start">
             {/* Full Day of Week Labels on Left */}
-            <div className="flex flex-col justify-between text-xs font-semibold text-slate-400 pr-5 select-none h-[168px] pt-8">
+            <div className="flex flex-col justify-between text-xs font-semibold text-slate-400 pr-5 select-none h-[168px] pt-7">
               {fullDayLabels.map((dayLabel) => (
                 <span key={dayLabel} className="text-[11px] font-mono leading-none">
                   {dayLabel}
@@ -220,28 +227,37 @@ export default function ContributionCalendar({ username }: { username?: string }
               ))}
             </div>
 
-            {/* Months Container with Clear Gaps Between Months */}
-            <div className="flex items-start gap-6">
-              {monthsGrouped.map((mGroup) => (
-                <div key={mGroup.monthName} className="flex flex-col space-y-2">
-                  {/* Full Month Name Header */}
-                  <div className="text-xs font-extrabold text-sky-400 font-mono tracking-wide">
-                    {mGroup.monthName}
+            {/* Individual Enclosed Month Blocks */}
+            <div className="flex items-start gap-4">
+              {months.map((month) => (
+                <div
+                  key={month.name}
+                  className={`bg-[#0d111a] border rounded-xl p-3 flex flex-col space-y-2 transition shadow-lg ${
+                    selectedMonth === month.name
+                      ? 'border-emerald-500/80 ring-1 ring-emerald-500/40'
+                      : 'border-slate-800/90'
+                  }`}
+                >
+                  {/* Month Header Label */}
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 text-xs font-bold font-mono">
+                    <span className="text-sky-400 font-extrabold">{month.name}</span>
+                    <span className="text-[10px] text-slate-500">{month.totalDays} days</span>
                   </div>
 
-                  {/* Weeks in this Month */}
-                  <div className="flex gap-2">
-                    {mGroup.weeks.map((week, wIdx) => (
-                      <div key={wIdx} className="flex flex-col gap-2">
+                  {/* Month's Own Date Grid */}
+                  <div className="flex gap-1.5 pt-1">
+                    {month.weeks.map((week, wIdx) => (
+                      <div key={wIdx} className="flex flex-col gap-1.5">
                         {week.map((day, dIdx) => (
                           <div
                             key={dIdx}
-                            onMouseEnter={() => setHoveredDay({ date: day.date, count: day.count })}
+                            onMouseEnter={() =>
+                              day && setHoveredDay({ date: day.date, count: day.count, dayNumber: day.dayNumber })
+                            }
                             onMouseLeave={() => setHoveredDay(null)}
-                            className={`w-4 h-4 rounded-md transition-all duration-150 cursor-pointer shadow-sm ${getColorClass(
-                              day.count,
-                              day.isToday,
-                              day.monthName
+                            className={`w-4 h-4 rounded-md transition-all duration-150 ${getColorClass(
+                              day,
+                              month.name
                             )}`}
                           />
                         ))}
@@ -262,7 +278,7 @@ export default function ContributionCalendar({ username }: { username?: string }
                 📅 {new Date(hoveredDay.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}: <strong className="text-white">{hoveredDay.count} logins / activities</strong>
               </span>
             ) : (
-              <span className="text-slate-500 font-mono text-[11px]">Hover over any square or click a month name above to highlight</span>
+              <span className="text-slate-500 font-mono text-[11px]">Hover over any square or click a month block above</span>
             )}
           </div>
 
