@@ -5,8 +5,10 @@ import fs from 'fs';
 import path from 'path';
 import { prisma } from '../config/db';
 import { AuthRequest } from '../middleware/auth';
+import { GitService } from '../services/git.service';
 
 const PERSISTENT_FILE = path.resolve(__dirname, '../data/persistent_users.json');
+const STORAGE_ROOT = process.env.REPOS_STORAGE_PATH || './repos_storage';
 
 function getPersistentUsers(): any[] {
   try {
@@ -80,6 +82,62 @@ export class AuthController {
           avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${cleanUsername}`,
         },
       });
+
+      // Automatically create a starter repository for the new user!
+      try {
+        const repoName = 'my-first-repo';
+        const repoStoragePath = path.resolve(STORAGE_ROOT, cleanUsername, repoName);
+        await GitService.initRepository(
+          repoStoragePath,
+          repoName,
+          'Welcome to Flicko! Your first interactive web repository.',
+          'main'
+        );
+
+        await prisma.repository.create({
+          data: {
+            name: repoName,
+            description: 'Welcome to Flicko! Your first interactive web repository.',
+            isPrivate: false,
+            defaultBranch: 'main',
+            storagePath: repoStoragePath,
+            ownerId: user.id,
+          },
+        });
+
+        // Add starter index.html
+        await GitService.commitFileChange(
+          repoStoragePath,
+          'main',
+          'index.html',
+          `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to Flicko</title>
+  <style>
+    body { font-family: sans-serif; background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #1e293b; padding: 40px; border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1 { color: #38bdf8; margin-bottom: 10px; }
+    button { background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 Welcome to Flicko, ${cleanUsername}!</h1>
+    <p>Your repository is ready. Edit files and see live changes!</p>
+    <button onclick="alert('Hello from Flicko!')">Click Me</button>
+  </div>
+</body>
+</html>`,
+          'Initial commit: Add starter index.html',
+          user.username,
+          user.email
+        );
+        console.log(`✨ Created starter repo for ${cleanUsername}`);
+      } catch (repoErr: any) {
+        console.error('Failed to create starter repo:', repoErr.message);
+      }
 
       // Backup to persistent storage
       savePersistentUser({
