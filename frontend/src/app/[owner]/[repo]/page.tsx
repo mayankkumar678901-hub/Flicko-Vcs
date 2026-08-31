@@ -128,7 +128,7 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
           </Link>
           <Link
             href={`/${params.owner}/${params.repo}/commits?ref=${ref}`}
-            className="flex items-center space-x-1 text-slate-400 hover:text-white transition"
+            className="flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg transition font-semibold"
           >
             <Clock className="w-4 h-4 text-emerald-400" />
             <span>Commit Timeline</span>
