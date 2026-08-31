@@ -27,13 +27,20 @@ export default function ProfileSettingsPage() {
 
   const fetchProfile = async () => {
     setLoading(true);
+    const token = localStorage.getItem('vcs_token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
     try {
       const res = await api.get('/auth/me');
       const u = res.data.user;
       setUser(u);
-      setEmail(u.email);
+      setEmail(u.email || '');
       setAvatarUrl(u.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.username}`);
     } catch (err) {
+      localStorage.removeItem('vcs_token');
       router.push('/login');
     } finally {
       setLoading(false);
@@ -71,8 +78,13 @@ export default function ProfileSettingsPage() {
     }
   };
 
-  if (loading) {
-    return <div className="py-12 text-center text-slate-400 text-sm">Loading user profile...</div>;
+  if (loading || !user) {
+    return (
+      <div className="py-20 text-center text-slate-400 space-y-3">
+        <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="text-sm">Loading user profile...</p>
+      </div>
+    );
   }
 
   return (
@@ -100,7 +112,7 @@ export default function ProfileSettingsPage() {
       )}
 
       {/* Daily Progress Calendar Tracker */}
-      <ContributionCalendar username={user?.username} />
+      <ContributionCalendar username={user.username} />
 
       {/* Profile & Settings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -125,7 +137,9 @@ export default function ProfileSettingsPage() {
                 <Calendar className="w-3.5 h-3.5 text-sky-400" />
                 <span>Joined</span>
               </span>
-              <span className="text-white font-medium">{new Date(user.createdAt).toLocaleDateString()}</span>
+              <span className="text-white font-medium">
+                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Active'}
+              </span>
             </div>
 
             <div className="flex items-center justify-between">

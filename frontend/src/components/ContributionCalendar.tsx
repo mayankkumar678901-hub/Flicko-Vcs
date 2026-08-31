@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Flame, Calendar, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 export default function SimpleCalendar({ username }: { username?: string }) {
+  const [mounted, setMounted] = useState(false);
   const [activities, setActivities] = useState<{ [dateStr: string]: number }>({});
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
   useEffect(() => {
+    setMounted(true);
     const storageKey = `flicko_activity_${username || 'user'}`;
     let saved: Record<string, number> = {};
     try {
@@ -28,6 +30,14 @@ export default function SimpleCalendar({ username }: { username?: string }) {
   ];
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  if (!mounted) {
+    return (
+      <div className="bg-[#121722] border border-slate-800 rounded-2xl p-6 shadow-xl max-w-xl mx-auto text-center text-slate-500 text-xs">
+        Loading calendar...
+      </div>
+    );
+  }
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
