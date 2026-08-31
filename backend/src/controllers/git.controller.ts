@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import fs from 'fs';
 import { prisma } from '../config/db';
 import { AuthRequest } from '../middleware/auth';
 import { GitService } from '../services/git.service';
@@ -13,6 +14,12 @@ export class GitController {
     });
 
     if (!repo) throw new Error('Repository not found');
+
+    // Auto-restore disk repository if missing after server restart
+    if (!fs.existsSync(repo.storagePath)) {
+      await GitService.initRepository(repo.storagePath, repo.name, repo.description || '', repo.defaultBranch);
+    }
+
     return { repo, path: repo.storagePath };
   }
 
