@@ -4,23 +4,14 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Search, BookMarked, Plus, GitBranch, Lock, Globe } from 'lucide-react';
 import { Repository, api, User } from '@/lib/api';
-import ContributionCalendar from '@/components/ContributionCalendar';
 
 export default function Dashboard() {
   const [repos, setRepos] = useState<Repository[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRepos('');
-
-    const token = localStorage.getItem('vcs_token');
-    if (token) {
-      api.get('/auth/me')
-        .then((res) => setCurrentUser(res.data.user))
-        .catch(() => {});
-    }
   }, []);
 
   const fetchRepos = (query: string) => {
@@ -44,7 +35,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Explore Repositories</h1>
           <p className="text-slate-400 text-xs mt-1">
-            Discover projects, run live web applications, and track daily progress.
+            Discover projects, manage codebases, and run live interactive web applications.
           </p>
         </div>
         <Link
@@ -55,9 +46,6 @@ export default function Dashboard() {
           <span>New Repository</span>
         </Link>
       </div>
-
-      {/* Progress Track Calendar */}
-      <ContributionCalendar username={currentUser?.username} />
 
       {/* Search Input */}
       <div className="relative">
