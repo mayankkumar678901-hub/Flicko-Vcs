@@ -13,9 +13,17 @@ export class AuthController {
         return res.status(400).json({ error: 'Username, email, and password are required' });
       }
 
+      const cleanUsername = username.trim();
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+
       const existingUser = await prisma.user.findFirst({
         where: {
-          OR: [{ username }, { email }],
+          OR: [
+            { username: cleanUsername },
+            { email: cleanEmail },
+            { username: cleanUsername.toLowerCase() },
+          ],
         },
       });
 
@@ -23,13 +31,13 @@ export class AuthController {
         return res.status(400).json({ error: 'Username or email already taken' });
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await bcrypt.hash(cleanPassword, 10);
       const user = await prisma.user.create({
         data: {
-          username,
-          email,
+          username: cleanUsername,
+          email: cleanEmail,
           passwordHash,
-          avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
+          avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${cleanUsername}`,
         },
       });
 
@@ -58,9 +66,17 @@ export class AuthController {
         return res.status(400).json({ error: 'Email/Username and password are required' });
       }
 
+      const cleanInput = emailOrUsername.trim();
+      const cleanPassword = password.trim();
+
       const user = await prisma.user.findFirst({
         where: {
-          OR: [{ email: emailOrUsername }, { username: emailOrUsername }],
+          OR: [
+            { email: cleanInput },
+            { username: cleanInput },
+            { email: cleanInput.toLowerCase() },
+            { username: cleanInput.toLowerCase() },
+          ],
         },
       });
 
@@ -68,7 +84,7 @@ export class AuthController {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      const isPasswordValid = await bcrypt.compare(cleanPassword, user.passwordHash);
       if (!isPasswordValid) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
