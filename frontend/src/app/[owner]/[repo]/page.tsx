@@ -10,7 +10,7 @@ import ReadmeViewer from '@/components/ReadmeViewer';
 import LivePreviewModal from '@/components/LivePreviewModal';
 import TimeTravelSlider from '@/components/TimeTravelSlider';
 import SlidingFileDrawer from '@/components/SlidingFileDrawer';
-import { GitCommit, GitBranch, Plus, FileCode, Clock, Play, Sparkles, Lock, Trash2, AlertTriangle, X } from 'lucide-react';
+import { GitCommit, GitBranch, Plus, FileCode, Clock, Play, Sparkles, Lock, Trash2, AlertTriangle, X, LogIn } from 'lucide-react';
 
 export default function RepoRootPage({ params }: { params: { owner: string; repo: string } }) {
   const router = useRouter();
@@ -154,7 +154,13 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
     return <div className="py-12 text-center text-red-400">Repository not found.</div>;
   }
 
-  const isOwner = currentUser && repoData.owner.id === currentUser.id;
+  // Robust owner check (matches by ID or case-insensitive username)
+  const isOwner = Boolean(
+    currentUser && (
+      (repoData.owner && currentUser.id === repoData.owner.id) ||
+      (currentUser.username && currentUser.username.toLowerCase() === params.owner.toLowerCase())
+    )
+  );
 
   return (
     <div className="space-y-6">
@@ -168,7 +174,7 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
             <span className="text-xs border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 rounded-full text-slate-300 capitalize font-medium">
               {repoData.isPrivate ? 'Private' : 'Public'}
             </span>
-            {!isOwner && (
+            {!isOwner && currentUser && (
               <span className="text-[11px] border border-amber-500/30 bg-amber-500/10 text-amber-300 px-2.5 py-0.5 rounded-full flex items-center space-x-1 font-semibold">
                 <Lock className="w-3 h-3" />
                 <span>Read-Only</span>
@@ -193,9 +199,9 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
             <>
               <Link
                 href={`/${params.owner}/${params.repo}/edit/${ref}/new-file.txt`}
-                className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                className="flex items-center space-x-1.5 bg-gradient-to-r from-indigo-500 to-sky-500 hover:brightness-110 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md shadow-indigo-500/20 transition"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span>Add File</span>
               </Link>
               <button
@@ -207,9 +213,17 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
                 <Trash2 className="w-4 h-4" />
               </button>
             </>
+          ) : !currentUser ? (
+            <Link
+              href="/login"
+              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In to Edit</span>
+            </Link>
           ) : (
             <span
-              className="flex items-center space-x-1 bg-slate-900 border border-slate-800 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed"
+              className="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed"
               title="Only repository owner can add or edit files"
             >
               <Lock className="w-3.5 h-3.5" />
