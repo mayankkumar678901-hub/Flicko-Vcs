@@ -160,7 +160,7 @@ export default function ContributionCalendar({ username }: { username?: string }
           </div>
           <div>
             <h3 className="font-extrabold text-white text-base">Daily Login & Progress Track Calendar</h3>
-            <p className="text-xs text-slate-400">Track your daily streak and progress month-by-month</p>
+            <p className="text-xs text-slate-400">Track your daily streak, weekly blocks, and monthly milestones</p>
           </div>
         </div>
 
@@ -214,12 +214,12 @@ export default function ContributionCalendar({ username }: { username?: string }
         ))}
       </div>
 
-      {/* Calendar Grid with Grouped Month Blocks */}
+      {/* Calendar Grid with Grouped Month Blocks & Week Names */}
       <div className="space-y-2">
         <div className="overflow-x-auto pb-3 pt-1">
-          <div className="inline-flex min-w-[760px] items-start">
-            {/* Full Day of Week Labels on Left */}
-            <div className="flex flex-col justify-between text-xs font-semibold text-slate-400 pr-5 select-none h-[168px] pt-7">
+          <div className="inline-flex min-w-[820px] items-start">
+            {/* Full Day of Week Labels on Left (Row Headers) */}
+            <div className="flex flex-col justify-between text-xs font-semibold text-slate-400 pr-5 select-none h-[182px] pt-14">
               {fullDayLabels.map((dayLabel) => (
                 <span key={dayLabel} className="text-[11px] font-mono leading-none">
                   {dayLabel}
@@ -227,27 +227,36 @@ export default function ContributionCalendar({ username }: { username?: string }
               ))}
             </div>
 
-            {/* Individual Enclosed Month Blocks */}
+            {/* Individual Enclosed Month Cards with Week Names on Columns */}
             <div className="flex items-start gap-4">
               {months.map((month) => (
                 <div
                   key={month.name}
-                  className={`bg-[#0d111a] border rounded-xl p-3 flex flex-col space-y-2 transition shadow-lg ${
+                  className={`bg-[#0d111a] border rounded-xl p-3.5 flex flex-col space-y-2.5 transition shadow-lg ${
                     selectedMonth === month.name
                       ? 'border-emerald-500/80 ring-1 ring-emerald-500/40'
                       : 'border-slate-800/90'
                   }`}
                 >
                   {/* Month Header Label */}
-                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 text-xs font-bold font-mono">
-                    <span className="text-sky-400 font-extrabold">{month.name}</span>
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs font-bold font-mono">
+                    <span className="text-sky-400 font-extrabold text-xs tracking-wide">{month.name}</span>
                     <span className="text-[10px] text-slate-500">{month.totalDays} days</span>
                   </div>
 
-                  {/* Month's Own Date Grid */}
-                  <div className="flex gap-1.5 pt-1">
+                  {/* Week Names Header Row */}
+                  <div className="flex gap-2 text-center text-[10px] font-mono font-bold text-slate-400 pb-0.5">
+                    {month.weeks.map((_, wIdx) => (
+                      <div key={wIdx} className="w-5 text-center text-slate-400 truncate">
+                        W{wIdx + 1}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Month's Own Date Grid (7 Rows of Day Blocks) */}
+                  <div className="flex gap-2">
                     {month.weeks.map((week, wIdx) => (
-                      <div key={wIdx} className="flex flex-col gap-1.5">
+                      <div key={wIdx} className="flex flex-col gap-2">
                         {week.map((day, dIdx) => (
                           <div
                             key={dIdx}
@@ -255,11 +264,13 @@ export default function ContributionCalendar({ username }: { username?: string }
                               day && setHoveredDay({ date: day.date, count: day.count, dayNumber: day.dayNumber })
                             }
                             onMouseLeave={() => setHoveredDay(null)}
-                            className={`w-4 h-4 rounded-md transition-all duration-150 ${getColorClass(
+                            className={`w-5 h-5 rounded-md transition-all duration-150 flex items-center justify-center text-[10px] font-mono select-none ${getColorClass(
                               day,
                               month.name
-                            )}`}
-                          />
+                            )} ${day ? 'text-slate-300 hover:text-white font-semibold' : ''}`}
+                          >
+                            {day ? day.dayNumber : ''}
+                          </div>
                         ))}
                       </div>
                     ))}
@@ -278,7 +289,7 @@ export default function ContributionCalendar({ username }: { username?: string }
                 📅 {new Date(hoveredDay.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}: <strong className="text-white">{hoveredDay.count} logins / activities</strong>
               </span>
             ) : (
-              <span className="text-slate-500 font-mono text-[11px]">Hover over any square or click a month block above</span>
+              <span className="text-slate-500 font-mono text-[11px]">Hover over any date block or click a month tab above</span>
             )}
           </div>
 
