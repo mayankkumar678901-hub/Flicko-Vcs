@@ -68,13 +68,13 @@ export class RepoController {
     try {
       const search = (req.query.search as string) || '';
 
+      const whereClause: any = { isPrivate: false };
+      if (search.trim()) {
+        whereClause.name = { contains: search.trim() };
+      }
+
       const repos = await prisma.repository.findMany({
-        where: {
-          isPrivate: false,
-          name: {
-            contains: search,
-          },
-        },
+        where: whereClause,
         include: {
           owner: {
             select: { id: true, username: true, avatarUrl: true },
