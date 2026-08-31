@@ -1,8 +1,39 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
 import { prisma } from '../config/db';
 import { AuthRequest } from '../middleware/auth';
+
+const PERSISTENT_FILE = path.resolve(__dirname, '../data/persistent_users.json');
+
+function savePersistentUser(user: { username: string; email: string; passwordHash: string; avatarUrl?: string }) {
+  try {
+    const dir = path.dirname(PERSISTENT_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    let list: any[] = [];
+    if (fs.existsSync(PERSISTENT_FILE)) {
+      try {
+        list = JSON.parse(fs.readFileSync(PERSISTENT_FILE, 'utf8'));
+      } catch {
+        list = [];
+      }
+    }
+
+    const idx = list.findIndex((u: any) => u.username.toLowerCase() === user.username.toLowerCase());
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...user };
+    } else {
+      list.push(user);
+    }
+    fs.writeFileSync(PERSISTENT_FILE, JSON.stringify(list, null, 2), 'utf8');
+    console.log('💾 User saved to persistent backup:', user.username);
+  } catch (err: any) {
+    console.error('Failed to save persistent user backup:', err.message);
+  }
+}
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -35,6 +66,14 @@ export class AuthController {
           passwordHash,
           avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${cleanUsername}`,
         },
+      });
+
+      // Backup to persistent storage so redeploys never erase accounts
+      savePersistentUser({
+        username: user.username,
+        email: user.email,
+        passwordHash: user.passwordHash,
+        avatarUrl: user.avatarUrl || undefined,
       });
 
       const secret = process.env.JWT_SECRET || 'super-secret-vcs-jwt-key-2026';
@@ -166,7 +205,15 @@ export class AuthController {
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: updateData,
-        select: { id: true, username: true, email: true, avatarUrl: true, createdAt: true },
+        select: { id: true, username: true, email: true, avatarUrl: true, passwordHash: true, createdAt: true },
+      });
+
+      // Update persistent backup
+      savePersistentUser({
+        username: updatedUser.username,
+        email: updatedUser.email,
+        passwordHash: updatedUser.passwordHash,
+        avatarUrl: updatedUser.avatarUrl || undefined,
       });
 
       return res.json({ message: 'Profile updated successfully', user: updatedUser });

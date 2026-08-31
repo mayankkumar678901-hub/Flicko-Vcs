@@ -5,13 +5,39 @@ import { prisma } from '../config/db';
 import { GitService } from './git.service';
 
 const STORAGE_ROOT = process.env.REPOS_STORAGE_PATH || './repos_storage';
+const PERSISTENT_FILE = path.resolve(__dirname, '../data/persistent_users.json');
 
 export class SeedService {
   static async ensureSeedData() {
     try {
-      console.log('🔄 Checking database seed data...');
+      console.log('🔄 Checking database seed data & persistent backups...');
 
-      // 1. Ensure User 'mayank' exists
+      // 1. Restore all users saved in persistent backup
+      if (fs.existsSync(PERSISTENT_FILE)) {
+        try {
+          const list: any[] = JSON.parse(fs.readFileSync(PERSISTENT_FILE, 'utf8'));
+          for (const item of list) {
+            const existing = await prisma.user.findFirst({
+              where: { OR: [{ username: item.username }, { email: item.email }] },
+            });
+            if (!existing) {
+              await prisma.user.create({
+                data: {
+                  username: item.username,
+                  email: item.email,
+                  passwordHash: item.passwordHash,
+                  avatarUrl: item.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${item.username}`,
+                },
+              });
+              console.log(`✅ Auto-restored user account from backup: ${item.username}`);
+            }
+          }
+        } catch (e: any) {
+          console.warn('Could not parse persistent users file:', e.message);
+        }
+      }
+
+      // 2. Ensure default User 'mayank' exists
       let user = await prisma.user.findFirst({
         where: { OR: [{ username: 'mayank' }, { email: 'mayank@example.com' }] },
       });
@@ -29,7 +55,7 @@ export class SeedService {
         console.log('✅ Auto-restored default user: mayank');
       }
 
-      // 2. Ensure Repo 'todo-app' exists
+      // 3. Ensure Repo 'todo-app' exists
       let todoRepo = await prisma.repository.findFirst({
         where: { ownerId: user.id, name: 'todo-app' },
       });
@@ -130,7 +156,7 @@ function renderTasks() {
         console.log('✅ Auto-restored repo: todo-app');
       }
 
-      // 3. Ensure Repo 'girlfriend-day-surprise' exists
+      // 4. Ensure Repo 'girlfriend-day-surprise' exists
       let gfRepo = await prisma.repository.findFirst({
         where: { ownerId: user.id, name: 'girlfriend-day-surprise' },
       });
@@ -166,7 +192,7 @@ function renderTasks() {
         console.log('✅ Auto-restored repo: girlfriend-day-surprise');
       }
 
-      console.log('✨ Database seed data ready!');
+      console.log('✨ Database seed & persistent user backups ready!');
     } catch (err: any) {
       console.error('Seed auto-restoration error:', err.message);
     }
