@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api, User } from '@/lib/api';
+import ContributionCalendar from '@/components/ContributionCalendar';
 import { User as UserIcon, Mail, Key, ShieldCheck, Check, Save, Settings, Folder, Calendar } from 'lucide-react';
 
 export default function ProfileSettingsPage() {
@@ -97,6 +98,9 @@ export default function ProfileSettingsPage() {
           <span>{success}</span>
         </div>
       )}
+
+      {/* Daily Progress Calendar Tracker */}
+      <ContributionCalendar username={user?.username} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left Column: Profile Card */}
