@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { GitBranch, Plus, User as UserIcon, LogOut, Code, Sparkles } from 'lucide-react';
+import { GitBranch, Plus, User as UserIcon, LogOut, Code, Settings } from 'lucide-react';
 import { User, api } from '@/lib/api';
 
 export default function Navbar() {
@@ -51,14 +51,29 @@ export default function Navbar() {
               <Plus className="w-4 h-4" />
               <span>New Repo</span>
             </Link>
-            <div className="flex items-center space-x-2 text-sm bg-slate-800/50 border border-slate-700/50 px-3 py-1 rounded-full">
+
+            {/* User Profile & Settings link */}
+            <Link
+              href="/settings"
+              className="flex items-center space-x-2 text-sm bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 px-3 py-1 rounded-full transition group"
+              title="Profile & Settings"
+            >
               <img
-                src={user.avatarUrl || 'https://api.dicebear.com/7.x/identicon/svg?seed=user'}
+                src={user.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${user.username}`}
                 alt={user.username}
-                className="w-6 h-6 rounded-full bg-slate-700"
+                className="w-6 h-6 rounded-full bg-slate-700 border border-slate-600"
               />
-              <span className="font-semibold text-slate-200 text-xs">{user.username}</span>
-            </div>
+              <span className="font-semibold text-slate-200 text-xs group-hover:text-sky-400 transition">{user.username}</span>
+            </Link>
+
+            <Link
+              href="/settings"
+              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/50 transition"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </Link>
+
             <button
               onClick={handleLogout}
               className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800/50 transition"
