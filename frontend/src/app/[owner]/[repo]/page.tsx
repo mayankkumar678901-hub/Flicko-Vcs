@@ -154,7 +154,7 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
     return <div className="py-12 text-center text-red-400">Repository not found.</div>;
   }
 
-  // Robust owner check (matches by ID or case-insensitive username)
+  // Owner check (by ID or case-insensitive username)
   const isOwner = Boolean(
     currentUser && (
       (repoData.owner && currentUser.id === repoData.owner.id) ||
@@ -177,7 +177,7 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
             {!isOwner && currentUser && (
               <span className="text-[11px] border border-amber-500/30 bg-amber-500/10 text-amber-300 px-2.5 py-0.5 rounded-full flex items-center space-x-1 font-semibold">
                 <Lock className="w-3 h-3" />
-                <span>Read-Only</span>
+                <span>Read-Only Mode</span>
               </span>
             )}
           </div>
@@ -195,6 +195,7 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
             </button>
           )}
 
+          {/* Add File / Sign In Controls */}
           {isOwner ? (
             <>
               <Link
@@ -216,18 +217,18 @@ export default function RepoRootPage({ params }: { params: { owner: string; repo
           ) : !currentUser ? (
             <Link
               href="/login"
-              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition"
+              className="flex items-center space-x-1.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:brightness-110 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md shadow-sky-500/20 transition"
             >
               <LogIn className="w-3.5 h-3.5" />
-              <span>Sign In to Edit</span>
+              <span>Sign in to Edit & Add Files</span>
             </Link>
           ) : (
             <span
-              className="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed"
-              title="Only repository owner can add or edit files"
+              className="flex items-center space-x-1 bg-slate-900 border border-slate-800 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed"
+              title="Only the owner of this repository can add or edit files"
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Read-Only Access</span>
+              <span>Read-Only</span>
             </span>
           )}
         </div>
