@@ -178,17 +178,31 @@ function generateId() { return Math.random().toString(36).substr(2, 9); }`,
           },
         });
 
-        // Copy files from scratch if existing
-        const scratchDir = 'C:/Users/Asus/.gemini/antigravity/scratch/girlfriend-day';
-        if (fs.existsSync(scratchDir)) {
-          const idxHtml = fs.readFileSync(path.join(scratchDir, 'index.html'), 'utf8');
-          const stlCss = fs.readFileSync(path.join(scratchDir, 'styles.css'), 'utf8');
-          const scrJs = fs.readFileSync(path.join(scratchDir, 'script.js'), 'utf8');
+        const gfIndexHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Happy Girlfriend Day ❤️</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #ffe4e6 0%, #f43f5e 100%); font-family: 'Segoe UI', sans-serif; }
+    .card { background: rgba(255,255,255,0.95); padding: 40px; border-radius: 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-width: 450px; }
+    h1 { color: #e11d48; margin-bottom: 15px; font-size: 28px; }
+    p { color: #475569; line-height: 1.6; font-size: 15px; }
+    .btn { background: #f43f5e; color: white; border: none; padding: 12px 28px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: transform 0.2s; margin-top: 20px; font-size: 16px; }
+    .btn:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="font-size: 50px; margin-bottom: 10px;">💖</div>
+    <h1>Happy Girlfriend Day!</h1>
+    <p>You make every single day brighter, sweeter, and more beautiful. Thank you for being the most amazing person!</p>
+    <button class="btn" onclick="alert('❤️ You are my favorite person in the whole universe!')">Click for Love 💌</button>
+  </div>
+</body>
+</html>`;
 
-          await GitService.commitFileChange(gfPath, 'main', 'index.html', idxHtml, 'feat: add index.html', user.username, user.email);
-          await GitService.commitFileChange(gfPath, 'main', 'styles.css', stlCss, 'style: add styles.css', user.username, user.email);
-          await GitService.commitFileChange(gfPath, 'main', 'script.js', scrJs, 'feat: add script.js', user.username, user.email);
-        }
+        await GitService.commitFileChange(gfPath, 'main', 'index.html', gfIndexHtml, 'feat: add romantic surprise page', user.username, user.email);
 
         console.log('✅ Auto-restored repo: girlfriend-day-surprise');
       }
