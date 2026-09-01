@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { UserPlus, Eye, EyeOff, Lock, Mail, User as UserIcon, Check, X, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User as UserIcon, Check, X, ShieldAlert } from 'lucide-react';
 
 function saveKnownAccount(username: string, email: string) {
   try {
@@ -88,13 +88,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto py-12">
+    <div className="max-w-md mx-auto py-10">
       <div className="bg-[#121722] border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 mx-auto shadow-lg shadow-indigo-500/20">
-            <div className="w-full h-full bg-[#0a0d14] rounded-[10px] flex items-center justify-center">
-              <UserPlus className="w-6 h-6 text-sky-400" />
-            </div>
+          {/* Official Flicko Logo */}
+          <div className="relative w-14 h-14 mx-auto rounded-2xl overflow-hidden shadow-xl shadow-purple-500/25 border-2 border-purple-500/30 p-0.5 bg-[#0a0d14]">
+            <img
+              src="/logo.png"
+              alt="Flicko Logo"
+              className="w-full h-full object-cover rounded-[10px]"
+            />
           </div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Create your Flicko account</h1>
           <p className="text-slate-400 text-xs">Join Flicko to host repositories and run live web apps</p>
@@ -119,7 +122,7 @@ export default function RegisterPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. alex"
-                className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2.5 pl-9 rounded-xl text-sm focus:outline-none focus:border-sky-400"
+                className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2.5 pl-9 rounded-xl text-sm focus:outline-none focus:border-sky-400 font-mono"
               />
               <UserIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
             </div>
@@ -136,7 +139,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="alex@example.com"
-                className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2.5 pl-9 rounded-xl text-sm focus:outline-none focus:border-sky-400"
+                className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2.5 pl-9 rounded-xl text-sm focus:outline-none focus:border-sky-400 font-mono"
               />
               <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
             </div>

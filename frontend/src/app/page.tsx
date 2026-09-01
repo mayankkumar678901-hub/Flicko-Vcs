@@ -52,26 +52,35 @@ export default function Dashboard() {
     );
   }
 
-  // 1. Logged-Out / Unregistered Visitor View: NO REPOSITORIES SHOWN
+  // 1. Logged-Out / Unregistered Visitor View: HERO SCREEN WITH NEW OFFICIAL FLICKO LOGO
   if (!user) {
     return (
-      <div className="max-w-4xl mx-auto py-12 space-y-12 text-center">
+      <div className="max-w-4xl mx-auto py-8 space-y-10 text-center">
         {/* Hero Section */}
         <div className="space-y-5">
+          {/* Official Flicko Logo Emblem */}
+          <div className="relative w-24 h-24 mx-auto rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/30 border-2 border-purple-500/40 p-1 bg-[#121722]/80 backdrop-blur-md hover:scale-105 transition duration-300">
+            <img
+              src="/logo.png"
+              alt="Flicko Official Logo"
+              className="w-full h-full object-cover rounded-2xl"
+            />
+          </div>
+
           <div className="inline-flex items-center space-x-2 bg-indigo-500/10 border border-indigo-500/30 px-3.5 py-1.5 rounded-full text-indigo-300 text-xs font-semibold shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
             <span>AI-Native Web Version Control System</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-            Where Code Meets <span className="bg-gradient-to-r from-sky-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">Intelligence</span>
+            Where Code Meets <span className="bg-gradient-to-r from-sky-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Intelligence</span>
           </h1>
 
           <p className="text-slate-400 text-sm max-w-xl mx-auto leading-relaxed">
             Host Git repositories, generate automated AI commits, inspect line-by-line diffs, and test live web applications instantly in your browser.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
             <Link
               href="/register"
               className="flex items-center space-x-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-bold text-sm hover:brightness-110 shadow-lg shadow-indigo-500/25 transition w-full sm:w-auto justify-center"

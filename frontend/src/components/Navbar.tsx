@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { GitBranch, Plus, User as UserIcon, LogOut, Code, Settings } from 'lucide-react';
+import { GitBranch, Plus, User as UserIcon, LogOut, Settings } from 'lucide-react';
 import { User, api } from '@/lib/api';
 import ThemeSwitcher from './ThemeSwitcher';
 
@@ -28,15 +28,17 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-[#121722]/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800/80 text-slate-200 px-6 py-3.5 flex items-center justify-between shadow-lg">
+    <nav className="bg-[#121722]/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800/80 text-slate-200 px-6 py-3 flex items-center justify-between shadow-lg">
       <div className="flex items-center space-x-6">
-        <Link href="/" className="flex items-center space-x-2.5 font-bold text-lg text-white group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 via-sky-500 to-emerald-400 p-0.5 shadow-md shadow-indigo-500/20 group-hover:scale-105 transition">
-            <div className="w-full h-full bg-[#0a0d14] rounded-[7px] flex items-center justify-center">
-              <Code className="w-4 h-4 text-sky-400" />
-            </div>
+        <Link href="/" className="flex items-center space-x-3 font-bold text-lg text-white group">
+          <div className="relative w-8 h-8 rounded-xl overflow-hidden shadow-md shadow-pink-500/20 group-hover:scale-105 transition">
+            <img
+              src="/logo.png"
+              alt="Flicko Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
-          <span className="bg-gradient-to-r from-white via-slate-200 to-sky-400 bg-clip-text text-transparent font-extrabold tracking-tight text-xl">
+          <span className="bg-gradient-to-r from-white via-slate-100 to-sky-300 bg-clip-text text-transparent font-extrabold tracking-tight text-xl">
             Flicko
           </span>
         </Link>
@@ -93,7 +95,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/register"
-              className="bg-gradient-to-r from-indigo-500 to-sky-500 text-white px-3.5 py-1.5 rounded-lg hover:brightness-110 font-semibold shadow-md shadow-indigo-500/20 transition text-xs"
+              className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-3.5 py-1.5 rounded-lg hover:brightness-110 font-semibold shadow-md shadow-indigo-500/20 transition text-xs"
             >
               Sign Up
             </Link>

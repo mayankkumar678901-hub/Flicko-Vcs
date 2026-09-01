@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { LogIn, Eye, EyeOff, Lock, User as UserIcon, ShieldAlert } from 'lucide-react';
+import { Eye, EyeOff, Lock, User as UserIcon, ShieldAlert } from 'lucide-react';
 
 function getKnownAccounts(): Array<{ username: string; email: string }> {
   try {
@@ -55,7 +55,7 @@ export default function LoginPage() {
     } catch (err: any) {
       const errMsg = err.response?.data?.error || '';
 
-      // Self-Healing Cloud Auto-Recovery: If cloud container was redeployed/restarted and SQLite was cleared
+      // Self-Healing Cloud Auto-Recovery
       if (errMsg.includes('User not found') || errMsg.includes('Invalid credentials')) {
         const known = getKnownAccounts();
         const matched = known.find(
@@ -89,13 +89,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto py-12">
+    <div className="max-w-md mx-auto py-10">
       <div className="bg-[#121722] border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-emerald-400 p-0.5 mx-auto shadow-lg shadow-sky-500/20">
-            <div className="w-full h-full bg-[#0a0d14] rounded-[10px] flex items-center justify-center">
-              <LogIn className="w-6 h-6 text-sky-400" />
-            </div>
+          {/* Official Flicko Logo */}
+          <div className="relative w-14 h-14 mx-auto rounded-2xl overflow-hidden shadow-xl shadow-pink-500/25 border-2 border-pink-500/30 p-0.5 bg-[#0a0d14]">
+            <img
+              src="/logo.png"
+              alt="Flicko Logo"
+              className="w-full h-full object-cover rounded-[10px]"
+            />
           </div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Sign In to Flicko</h1>
           <p className="text-slate-400 text-xs">Enter your credentials to access your repositories</p>
