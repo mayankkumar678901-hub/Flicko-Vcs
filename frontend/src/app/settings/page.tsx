@@ -83,84 +83,82 @@ export default function ProfileSettingsPage() {
 
   if (loading || !user) {
     return (
-      <div className="py-20 text-center text-slate-400 space-y-3">
-        <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
-        <p className="text-sm">Loading user profile...</p>
+      <div className="py-16 text-center text-slate-400 space-y-3">
+        <div className="w-7 h-7 border-2 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="text-xs">Loading user profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-6 space-y-8">
+    <div className="max-w-4xl mx-auto py-4 space-y-6">
       {/* Title Header */}
-      <div className="flex items-center space-x-3 pb-4 border-b border-slate-800">
-        <Settings className="w-6 h-6 text-sky-400" />
-        <div>
-          <h1 className="text-xl font-bold text-white">Account Settings & Profile</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Manage your personal profile details, mood themes, and repositories</p>
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center space-x-2.5">
+          <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center">
+            <Settings className="w-4 h-4 text-sky-400" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white">Account Settings & Profile</h1>
+            <p className="text-slate-400 text-[11px]">Manage personal profile, mood themes, and repositories</p>
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-950/60 border border-red-800 text-red-300 text-xs p-3.5 rounded-xl">
+        <div className="bg-red-950/60 border border-red-800 text-red-300 text-xs p-3 rounded-xl">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs p-3.5 rounded-xl flex items-center space-x-2">
+        <div className="bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs p-3 rounded-xl flex items-center space-x-2">
           <Check className="w-4 h-4 text-emerald-400" />
           <span>{success}</span>
         </div>
       )}
 
-      {/* Mood Themes Customizer Section */}
-      <div className="bg-[#121722] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      {/* Mood Themes Customizer Section (Compact Grid) */}
+      <div className="bg-[#121722] border border-slate-800 rounded-xl p-4 shadow-xl space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
           <div className="flex items-center space-x-2">
-            <Palette className="w-5 h-5 text-indigo-400" />
+            <Palette className="w-4 h-4 text-indigo-400" />
             <div>
-              <h3 className="text-sm font-bold text-white">Personal Mood Themes</h3>
-              <p className="text-xs text-slate-400">Choose your workspace vibe and ambient color scheme</p>
+              <h3 className="text-xs font-bold text-white">Personal Mood Themes</h3>
             </div>
           </div>
-          <span className="text-xs bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 px-3 py-1 rounded-full font-semibold">
+          <span className="text-[10px] bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full font-semibold">
             {MOOD_THEMES.find(t => t.id === theme)?.emoji} Active
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 pt-0.5">
           {MOOD_THEMES.map((t) => {
             const isSelected = t.id === theme;
             return (
               <button
                 key={t.id}
                 onClick={() => setTheme(t.id)}
-                className={`p-3.5 rounded-xl text-left transition flex flex-col justify-between space-y-3 group ${
+                className={`p-2 rounded-lg text-center transition flex flex-col items-center justify-between space-y-1.5 group ${
                   isSelected
-                    ? 'bg-slate-800/95 border-2 border-sky-400 shadow-lg shadow-sky-500/10 scale-[1.02]'
-                    : 'bg-[#0a0d14] border border-slate-800 hover:border-slate-700'
+                    ? 'bg-slate-800/95 border-2 border-sky-400 shadow-md shadow-sky-500/10 scale-[1.02]'
+                    : 'bg-[#0a0d14] border border-slate-800/90 hover:border-slate-700'
                 }`}
+                title={t.tagline}
               >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg">{t.emoji}</span>
-                    <span className="font-bold text-xs text-white group-hover:text-sky-300 transition">
-                      {t.name}
-                    </span>
-                  </div>
-                  {isSelected && <Check className="w-4 h-4 text-sky-400" />}
+                <div className="flex items-center justify-center text-sm">
+                  <span>{t.emoji}</span>
                 </div>
 
-                <p className="text-[11px] text-slate-400 leading-snug line-clamp-2">
-                  {t.tagline}
-                </p>
+                <span className="font-bold text-[11px] text-white group-hover:text-sky-300 transition truncate w-full">
+                  {t.name}
+                </span>
 
-                <div className="flex items-center space-x-1.5 pt-1">
+                <div className="flex items-center space-x-1 pt-0.5">
                   {t.previewColors.map((col, idx) => (
                     <div
                       key={idx}
-                      className="w-3.5 h-3.5 rounded-full border border-slate-900 shadow-sm"
+                      className="w-2 h-2 rounded-full border border-slate-900 shadow-sm"
                       style={{ backgroundColor: col }}
                     />
                   ))}
@@ -174,27 +172,27 @@ export default function ProfileSettingsPage() {
       {/* Daily Progress Calendar Tracker */}
       <ContributionCalendar username={user.username} />
 
-      {/* Profile & Settings Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Profile & Settings Grid (Compact) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Left Column: Profile Card */}
-        <div className="bg-[#121722] border border-slate-800 rounded-xl p-6 flex flex-col items-center text-center space-y-4 shadow-xl h-fit">
+        <div className="bg-[#121722] border border-slate-800 rounded-xl p-4 flex flex-col items-center text-center space-y-3 shadow-xl h-fit">
           <div className="relative group">
             <img
               src={avatarUrl}
               alt={user.username}
-              className="w-24 h-24 rounded-full bg-slate-900 border-2 border-indigo-500/50 shadow-lg"
+              className="w-16 h-16 rounded-full bg-slate-900 border-2 border-indigo-500/50 shadow-md"
             />
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-white">{user.username}</h2>
-            <p className="text-slate-400 text-xs font-mono">{user.email}</p>
+            <h2 className="text-sm font-bold text-white">{user.username}</h2>
+            <p className="text-slate-400 text-[11px] font-mono">{user.email}</p>
           </div>
 
-          <div className="w-full pt-4 border-t border-slate-800/80 text-xs text-slate-400 space-y-2 text-left">
+          <div className="w-full pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1.5 text-left">
             <div className="flex items-center justify-between">
-              <span className="flex items-center space-x-1.5">
-                <Calendar className="w-3.5 h-3.5 text-sky-400" />
+              <span className="flex items-center space-x-1">
+                <Calendar className="w-3 h-3 text-sky-400" />
                 <span>Joined</span>
               </span>
               <span className="text-white font-medium">
@@ -203,9 +201,9 @@ export default function ProfileSettingsPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center space-x-1.5">
-                <Folder className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Repositories</span>
+              <span className="flex items-center space-x-1">
+                <Folder className="w-3 h-3 text-emerald-400" />
+                <span>Repos</span>
               </span>
               <span className="text-white font-medium">{user.repositories?.length || 0}</span>
             </div>
@@ -213,26 +211,25 @@ export default function ProfileSettingsPage() {
         </div>
 
         {/* Right Column: Edit Profile Form */}
-        <div className="md:col-span-2 bg-[#121722] border border-slate-800 rounded-xl p-6 shadow-xl space-y-6">
-          <form onSubmit={handleSave} className="space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2">Profile Information</h3>
+        <div className="md:col-span-2 bg-[#121722] border border-slate-800 rounded-xl p-4 sm:p-5 shadow-xl space-y-4">
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-white border-b border-slate-800 pb-1.5">Profile Information</h3>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-300 mb-0.5">
                   Username
                 </label>
                 <input
                   type="text"
                   disabled
                   value={user.username}
-                  className="w-full bg-slate-900 border border-slate-800 text-slate-400 rounded-lg p-2.5 text-sm cursor-not-allowed font-mono"
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-400 rounded-lg py-1.5 px-3 text-xs cursor-not-allowed font-mono"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">Usernames cannot be changed.</p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-300 mb-0.5">
                   Email Address
                 </label>
                 <input
@@ -240,12 +237,12 @@ export default function ProfileSettingsPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-slate-700 text-white rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-400 font-mono"
+                  className="w-full bg-[#0a0d14] border border-slate-700 text-white rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-sky-400 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-300 mb-0.5">
                   Avatar Image URL
                 </label>
                 <div className="flex space-x-2">
@@ -253,25 +250,25 @@ export default function ProfileSettingsPage() {
                     type="text"
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
-                    className="flex-1 bg-[#0a0d14] border border-slate-700 text-white rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-400 font-mono text-xs"
+                    className="flex-1 bg-[#0a0d14] border border-slate-700 text-white rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-sky-400 font-mono"
                   />
                   <button
                     type="button"
                     onClick={handleRandomizeAvatar}
-                    className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-semibold border border-slate-700 transition"
+                    className="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition"
                   >
-                    Randomize
+                    Random
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Change Password Section */}
-            <div className="space-y-4 pt-4 border-t border-slate-800">
-              <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2">Change Password (Optional)</h3>
+            <div className="space-y-3 pt-3 border-t border-slate-800">
+              <h3 className="text-xs font-bold text-white border-b border-slate-800 pb-1.5">Change Password (Optional)</h3>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-300 mb-0.5">
                   Current Password
                 </label>
                 <input
@@ -279,12 +276,12 @@ export default function ProfileSettingsPage() {
                   placeholder="Required only if changing password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-slate-700 text-white rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-400"
+                  className="w-full bg-[#0a0d14] border border-slate-700 text-white rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-sky-400"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-300 mb-0.5">
                   New Password (8+ chars, numbers & symbols)
                 </label>
                 <input
@@ -292,63 +289,63 @@ export default function ProfileSettingsPage() {
                   placeholder="Leave blank to keep current password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-slate-700 text-white rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-400"
+                  className="w-full bg-[#0a0d14] border border-slate-700 text-white rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-sky-400"
                 />
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-1 flex justify-end">
               <button
                 type="submit"
                 disabled={saving}
-                className="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-2.5 rounded-lg text-xs font-bold hover:brightness-110 shadow-md shadow-emerald-500/20 transition disabled:opacity-50"
+                className="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:brightness-110 shadow-md shadow-emerald-500/20 transition disabled:opacity-50"
               >
-                <Save className="w-4 h-4" />
-                <span>{saving ? 'Saving Changes...' : 'Save Profile Changes'}</span>
+                <Save className="w-3.5 h-3.5" />
+                <span>{saving ? 'Saving...' : 'Save Changes'}</span>
               </button>
             </div>
           </form>
         </div>
       </div>
 
-      {/* Your Repositories Section */}
-      <div className="bg-[#121722] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      {/* Your Repositories Section (Compact) */}
+      <div className="bg-[#121722] border border-slate-800 rounded-xl p-4 shadow-xl space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <div className="flex items-center space-x-2">
-            <Folder className="w-5 h-5 text-sky-400" />
-            <h3 className="text-sm font-bold text-white">Your Repositories</h3>
+            <Folder className="w-4 h-4 text-sky-400" />
+            <h3 className="text-xs font-bold text-white">Your Repositories</h3>
           </div>
           <Link
             href="/new"
-            className="flex items-center space-x-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold hover:brightness-110 shadow transition"
+            className="flex items-center space-x-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[11px] px-2.5 py-1 rounded-lg font-semibold hover:brightness-110 shadow transition"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3 h-3" />
             <span>New Repo</span>
           </Link>
         </div>
 
         {user.repositories && user.repositories.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {user.repositories.map((repo: any) => (
               <Link
                 key={repo.id}
                 href={`/${user.username}/${repo.name}`}
-                className="p-4 bg-[#0a0d14] border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col justify-between group transition shadow"
+                className="p-3 bg-[#0a0d14] border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col justify-between group transition shadow"
               >
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-white text-sm group-hover:text-sky-400 transition">
+                    <span className="font-bold text-white text-xs group-hover:text-sky-400 transition">
                       {repo.name}
                     </span>
-                    <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
+                    <span className="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded-full border border-slate-700">
                       {repo.isPrivate ? 'Private' : 'Public'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 line-clamp-2 mb-2">
+                  <p className="text-[11px] text-slate-400 line-clamp-1 mb-1.5">
                     {repo.description || 'No description provided.'}
                   </p>
                 </div>
-                <div className="flex items-center space-x-3 text-[11px] text-slate-500 font-mono pt-2 border-t border-slate-800/80">
+                <div className="flex items-center space-x-3 text-[10px] text-slate-500 font-mono pt-1.5 border-t border-slate-800/80">
                   <span className="flex items-center space-x-1">
                     <GitBranch className="w-3 h-3 text-sky-400" />
                     <span>{repo.defaultBranch}</span>
@@ -360,7 +357,7 @@ export default function ProfileSettingsPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-slate-500 text-xs">
+          <div className="text-center py-6 text-slate-500 text-xs">
             You don't have any repositories yet. Click <strong>New Repo</strong> to create one!
           </div>
         )}
