@@ -3,9 +3,9 @@ import path from 'path';
 import fs from 'fs';
 import { prisma } from '../config/db';
 import { GitService } from './git.service';
+import { getPersistentUsers } from '../controllers/auth.controller';
 
 const STORAGE_ROOT = process.env.REPOS_STORAGE_PATH || './repos_storage';
-const PERSISTENT_FILE = path.resolve(__dirname, '../data/persistent_users.json');
 
 export class SeedService {
   static async ensureSeedData() {
@@ -13,27 +13,27 @@ export class SeedService {
       console.log('🔄 Checking database seed data & persistent backups...');
 
       // 1. Restore all users saved in persistent backup
-      if (fs.existsSync(PERSISTENT_FILE)) {
+      const backupUsers = getPersistentUsers();
+      console.log(`📦 Found ${backupUsers.length} user(s) in persistent backup ledger.`);
+
+      for (const item of backupUsers) {
         try {
-          const list: any[] = JSON.parse(fs.readFileSync(PERSISTENT_FILE, 'utf8'));
-          for (const item of list) {
-            const existing = await prisma.user.findFirst({
-              where: { OR: [{ username: item.username }, { email: item.email }] },
+          const existing = await prisma.user.findFirst({
+            where: { OR: [{ username: item.username }, { email: item.email }] },
+          });
+          if (!existing) {
+            await prisma.user.create({
+              data: {
+                username: item.username,
+                email: item.email,
+                passwordHash: item.passwordHash,
+                avatarUrl: item.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${item.username}`,
+              },
             });
-            if (!existing) {
-              await prisma.user.create({
-                data: {
-                  username: item.username,
-                  email: item.email,
-                  passwordHash: item.passwordHash,
-                  avatarUrl: item.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${item.username}`,
-                },
-              });
-              console.log(`✅ Auto-restored user account from backup: ${item.username}`);
-            }
+            console.log(`✅ Auto-restored user account from backup: ${item.username}`);
           }
-        } catch (e: any) {
-          console.warn('Could not parse persistent users file:', e.message);
+        } catch (uErr: any) {
+          console.warn(`Could not restore user ${item.username}:`, uErr.message);
         }
       }
 
@@ -147,7 +147,8 @@ function renderTasks() {
     li.innerHTML = '<input type="checkbox" ' + (task.completed ? 'checked' : '') + ' onchange="toggleTask(\'' + task.id + '\')" /><span style="' + (task.completed ? 'text-decoration:line-through;color:#aaa' : '') + '">' + task.text + '</span><button onclick="deleteTask(\'' + task.id + '\')" style="margin-left:auto;background:#fed7d7;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;">Delete</button>';
     list.appendChild(li);
   });
-}`,
+}
+function generateId() { return Math.random().toString(36).substr(2, 9); }`,
           'feat(logic): add task management functions',
           user.username,
           user.email

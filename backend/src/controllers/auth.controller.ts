@@ -7,34 +7,53 @@ import { prisma } from '../config/db';
 import { AuthRequest } from '../middleware/auth';
 import { GitService } from '../services/git.service';
 
-const PERSISTENT_FILE = path.resolve(__dirname, '../data/persistent_users.json');
 const STORAGE_ROOT = process.env.REPOS_STORAGE_PATH || './repos_storage';
 
-function getPersistentUsers(): any[] {
-  try {
-    if (fs.existsSync(PERSISTENT_FILE)) {
-      return JSON.parse(fs.readFileSync(PERSISTENT_FILE, 'utf8'));
-    }
-  } catch {}
+function getPersistentFilePaths(): string[] {
+  return [
+    path.resolve(process.cwd(), 'src/data/persistent_users.json'),
+    path.resolve(process.cwd(), 'data/persistent_users.json'),
+    path.resolve(process.cwd(), 'dist/data/persistent_users.json'),
+    path.resolve(__dirname, '../data/persistent_users.json'),
+    path.resolve(__dirname, '../../src/data/persistent_users.json'),
+  ];
+}
+
+export function getPersistentUsers(): any[] {
+  for (const filePath of getPersistentFilePaths()) {
+    try {
+      if (fs.existsSync(filePath)) {
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+  }
   return [];
 }
 
-function savePersistentUser(user: { username: string; email: string; passwordHash: string; avatarUrl?: string }) {
-  try {
-    const dir = path.dirname(PERSISTENT_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+export function savePersistentUser(user: { username: string; email: string; passwordHash: string; avatarUrl?: string }) {
+  let list = getPersistentUsers();
+  const idx = list.findIndex((u: any) => u.username.toLowerCase() === user.username.toLowerCase());
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], ...user };
+  } else {
+    list.push(user);
+  }
 
-    let list = getPersistentUsers();
-    const idx = list.findIndex((u: any) => u.username.toLowerCase() === user.username.toLowerCase());
-    if (idx >= 0) {
-      list[idx] = { ...list[idx], ...user };
-    } else {
-      list.push(user);
+  const jsonContent = JSON.stringify(list, null, 2);
+
+  for (const filePath of getPersistentFilePaths()) {
+    try {
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(filePath, jsonContent, 'utf8');
+      console.log('💾 User backup synced to:', filePath);
+    } catch (err: any) {
+      // Continue writing to other potential locations
     }
-    fs.writeFileSync(PERSISTENT_FILE, JSON.stringify(list, null, 2), 'utf8');
-    console.log('💾 User saved to persistent backup:', user.username);
-  } catch (err: any) {
-    console.error('Failed to save persistent user backup:', err.message);
   }
 }
 
@@ -162,7 +181,7 @@ export class AuthController {
         console.error('Failed to create starter repo:', repoErr.message);
       }
 
-      // Backup to persistent storage
+      // Backup to persistent storage across all locations
       savePersistentUser({
         username: user.username,
         email: user.email,
@@ -198,11 +217,37 @@ export class AuthController {
       const cleanInput = emailOrUsername.trim().toLowerCase();
       const cleanPassword = password.trim();
 
-      // Fetch all users and compare lowercased for 100% case-insensitivity
+      // 1. Fetch from DB
       const allUsers = await prisma.user.findMany();
-      const user = allUsers.find(
+      let user = allUsers.find(
         (u) => u.username.toLowerCase() === cleanInput || u.email.toLowerCase() === cleanInput
       );
+
+      // 2. If not found in current DB, check persistent backup and restore into DB!
+      if (!user) {
+        const backupUsers = getPersistentUsers();
+        const backupUser = backupUsers.find(
+          (u) => u.username.toLowerCase() === cleanInput || u.email.toLowerCase() === cleanInput
+        );
+
+        if (backupUser) {
+          try {
+            user = await prisma.user.create({
+              data: {
+                username: backupUser.username,
+                email: backupUser.email,
+                passwordHash: backupUser.passwordHash,
+                avatarUrl: backupUser.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${backupUser.username}`,
+              },
+            });
+            console.log(`🔄 Auto-restored user from backup during login: ${backupUser.username}`);
+          } catch (restoreErr) {
+            user = await prisma.user.findFirst({
+              where: { OR: [{ username: backupUser.username }, { email: backupUser.email }] }
+            }) || undefined;
+          }
+        }
+      }
 
       if (!user) {
         return res.status(401).json({ error: 'Invalid credentials. User not found.' });

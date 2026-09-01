@@ -1,0 +1,8 @@
+[
+  {
+    "username": "mayank",
+    "email": "mayank@example.com",
+    "passwordHash": "$2a$10$iGgI9k7sHj67Zg0U5B56t.M2wzV8zT0HqP7SgqJgI5oG6W0T1zXqe",
+    "avatarUrl": "https://api.dicebear.com/7.x/identicon/svg?seed=mayank"
+  }
+]
