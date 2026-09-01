@@ -2,14 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base Default Settings */
 body {
-  background-color: #0a0d14;
-  background-image: 
-    radial-gradient(at 20% 20%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(56, 189, 248, 0.06) 0px, transparent 50%),
-    radial-gradient(at 50% 80%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
-  background-attachment: fixed;
-  color: #e2e8f0;
+  margin: 0;
+  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
 }
@@ -18,21 +14,100 @@ code, pre {
   font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
 }
 
-/* Custom smooth scrollbar */
+/* ==================== 7 MOOD THEMES ==================== */
+
+/* 1. Midnight Void (Focus / Deep Space) */
+.theme-midnight {
+  background-color: #0a0d14;
+  background-image: 
+    radial-gradient(at 20% 20%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(56, 189, 248, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #e2e8f0;
+}
+
+/* 2. Cyberpunk Neon (Vibrant / Creative) */
+.theme-cyberpunk {
+  background-color: #0c0414;
+  background-image: 
+    radial-gradient(at 15% 15%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(168, 85, 247, 0.12) 0px, transparent 50%),
+    radial-gradient(at 50% 85%, rgba(6, 182, 212, 0.08) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #f1f5f9;
+}
+
+/* 3. Emerald Matrix (Calm / Hacker Zen) */
+.theme-forest {
+  background-color: #03100a;
+  background-image: 
+    radial-gradient(at 20% 20%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(52, 211, 153, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(5, 150, 105, 0.1) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #e6fcf5;
+}
+
+/* 4. Sunset Horizon (Warm / Passionate) */
+.theme-sunset {
+  background-color: #140707;
+  background-image: 
+    radial-gradient(at 20% 20%, rgba(249, 115, 22, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(251, 191, 36, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(244, 63, 94, 0.1) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #fff1f2;
+}
+
+/* 5. Ocean Abyss (Relaxed / Deep Flow) */
+.theme-ocean {
+  background-color: #030d17;
+  background-image: 
+    radial-gradient(at 20% 20%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(37, 99, 235, 0.08) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #f0f9ff;
+}
+
+/* 6. Cozy Mocha (Espresso / Late-Night) */
+.theme-coffee {
+  background-color: #120b08;
+  background-image: 
+    radial-gradient(at 20% 20%, rgba(217, 119, 6, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(180, 83, 9, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(120, 53, 15, 0.1) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #fef3c7;
+}
+
+/* 7. Daylight Prism (Crisp / Bright Daytime) */
+.theme-light {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 20% 20%, rgba(2, 132, 199, 0.06) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(15, 23, 42, 0.04) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #0f172a;
+}
+
+/* Custom smooth scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0d14;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: rgba(255, 255, 255, 0.3);
 }

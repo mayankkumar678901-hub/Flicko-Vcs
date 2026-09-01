@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api, User } from '@/lib/api';
 import ContributionCalendar from '@/components/ContributionCalendar';
-import { User as UserIcon, Mail, Key, ShieldCheck, Check, Save, Settings, Folder, Calendar, Plus, GitBranch, Lock, Globe, ExternalLink } from 'lucide-react';
+import { useTheme, MOOD_THEMES } from '@/context/ThemeContext';
+import { User as UserIcon, Mail, Key, ShieldCheck, Check, Save, Settings, Folder, Calendar, Plus, GitBranch, Lock, Globe, Palette, Sparkles } from 'lucide-react';
 
 export default function ProfileSettingsPage() {
   const [user, setUser] = useState<any>(null);
@@ -13,6 +14,8 @@ export default function ProfileSettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+
+  const { theme, setTheme } = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,7 +97,7 @@ export default function ProfileSettingsPage() {
         <Settings className="w-6 h-6 text-sky-400" />
         <div>
           <h1 className="text-xl font-bold text-white">Account Settings & Profile</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Manage your personal profile details, repositories, and progress</p>
+          <p className="text-slate-400 text-xs mt-0.5">Manage your personal profile details, mood themes, and repositories</p>
         </div>
       </div>
 
@@ -110,6 +113,63 @@ export default function ProfileSettingsPage() {
           <span>{success}</span>
         </div>
       )}
+
+      {/* Mood Themes Customizer Section */}
+      <div className="bg-[#121722] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex items-center space-x-2">
+            <Palette className="w-5 h-5 text-indigo-400" />
+            <div>
+              <h3 className="text-sm font-bold text-white">Personal Mood Themes</h3>
+              <p className="text-xs text-slate-400">Choose your workspace vibe and ambient color scheme</p>
+            </div>
+          </div>
+          <span className="text-xs bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 px-3 py-1 rounded-full font-semibold">
+            {MOOD_THEMES.find(t => t.id === theme)?.emoji} Active
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1">
+          {MOOD_THEMES.map((t) => {
+            const isSelected = t.id === theme;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                className={`p-3.5 rounded-xl text-left transition flex flex-col justify-between space-y-3 group ${
+                  isSelected
+                    ? 'bg-slate-800/95 border-2 border-sky-400 shadow-lg shadow-sky-500/10 scale-[1.02]'
+                    : 'bg-[#0a0d14] border border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">{t.emoji}</span>
+                    <span className="font-bold text-xs text-white group-hover:text-sky-300 transition">
+                      {t.name}
+                    </span>
+                  </div>
+                  {isSelected && <Check className="w-4 h-4 text-sky-400" />}
+                </div>
+
+                <p className="text-[11px] text-slate-400 leading-snug line-clamp-2">
+                  {t.tagline}
+                </p>
+
+                <div className="flex items-center space-x-1.5 pt-1">
+                  {t.previewColors.map((col, idx) => (
+                    <div
+                      key={idx}
+                      className="w-3.5 h-3.5 rounded-full border border-slate-900 shadow-sm"
+                      style={{ backgroundColor: col }}
+                    />
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Daily Progress Calendar Tracker */}
       <ContributionCalendar username={user.username} />
@@ -225,7 +285,7 @@ export default function ProfileSettingsPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  New Password
+                  New Password (8+ chars, numbers & symbols)
                 </label>
                 <input
                   type="password"

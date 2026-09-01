@@ -4,15 +4,16 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { GitBranch, Plus, User as UserIcon, LogOut, Code, Settings } from 'lucide-react';
 import { User, api } from '@/lib/api';
+import ThemeSwitcher from './ThemeSwitcher';
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('vcs_token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vcs_token') : null;
     if (token) {
       api.get('/auth/me')
-        .then(res => setUser(res.data.user))
+        .then((res) => setUser(res.data.user))
         .catch(() => {
           localStorage.removeItem('vcs_token');
           setUser(null);
@@ -41,7 +42,10 @@ export default function Navbar() {
         </Link>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3 sm:space-x-4">
+        {/* Mood Theme Switcher (Available to Everyone) */}
+        <ThemeSwitcher />
+
         {user ? (
           <>
             <Link
@@ -84,7 +88,7 @@ export default function Navbar() {
           </>
         ) : (
           <div className="flex items-center space-x-3 text-sm">
-            <Link href="/login" className="text-slate-400 hover:text-white font-medium transition">
+            <Link href="/login" className="text-slate-400 hover:text-white font-medium transition text-xs">
               Sign In
             </Link>
             <Link

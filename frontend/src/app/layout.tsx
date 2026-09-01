@@ -1,9 +1,10 @@
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 export const metadata = {
   title: 'Flicko | Web Version Control Platform',
-  description: 'Lightweight web-based Version Control System platform',
+  description: 'AI-Native web-based Version Control System platform with Mood Themes',
 };
 
 export default function RootLayout({
@@ -13,9 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-github-bg text-github-text antialiased">
-        <Navbar />
-        <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
+      <body className="min-h-screen antialiased">
+        <ThemeProvider>
+          <Navbar />
+          <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
+        </ThemeProvider>
       </body>
     </html>
   );
