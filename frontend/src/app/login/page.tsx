@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { LogIn, Eye, EyeOff, Lock, User as UserIcon } from 'lucide-react';
+import { LogIn, Eye, EyeOff, Lock, User as UserIcon, ShieldAlert } from 'lucide-react';
 
 export default function LoginPage() {
   const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -46,8 +46,9 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="bg-red-950/60 border border-red-800 text-red-300 text-xs p-3.5 rounded-xl text-center leading-relaxed">
-            {error}
+          <div className="bg-red-950/60 border border-red-800 text-red-300 text-xs p-3.5 rounded-xl text-center leading-relaxed flex items-center space-x-2">
+            <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+            <span className="flex-1">{error}</span>
           </div>
         )}
 
@@ -63,16 +64,24 @@ export default function LoginPage() {
                 value={emailOrUsername}
                 onChange={(e) => setEmailOrUsername(e.target.value)}
                 placeholder="Username or email"
-                className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2.5 pl-9 rounded-xl text-sm focus:outline-none focus:border-sky-400"
+                className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2.5 pl-9 rounded-xl text-sm focus:outline-none focus:border-sky-400 font-mono"
               />
               <UserIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-300">
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 hover:underline transition"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}

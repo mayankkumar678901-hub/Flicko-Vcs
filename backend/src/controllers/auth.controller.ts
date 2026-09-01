@@ -9,6 +9,9 @@ import { GitService } from '../services/git.service';
 
 const STORAGE_ROOT = process.env.REPOS_STORAGE_PATH || './repos_storage';
 
+// In-memory verification code storage for password resets (expires in 15 minutes)
+const resetCodes = new Map<string, { code: string; expiresAt: number; email: string }>();
+
 function getPersistentFilePaths(): string[] {
   return [
     path.resolve(process.cwd(), 'src/data/persistent_users.json'),
@@ -272,6 +275,139 @@ export class AuthController {
       });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Login failed' });
+    }
+  }
+
+  static async forgotPassword(req: Request, res: Response) {
+    try {
+      const { emailOrUsername } = req.body;
+
+      if (!emailOrUsername || !emailOrUsername.trim()) {
+        return res.status(400).json({ error: 'Email address or username is required.' });
+      }
+
+      const cleanInput = emailOrUsername.trim().toLowerCase();
+
+      // Find user in DB or backup
+      const allUsers = await prisma.user.findMany();
+      let user = allUsers.find(
+        (u) => u.username.toLowerCase() === cleanInput || u.email.toLowerCase() === cleanInput
+      );
+
+      if (!user) {
+        const backupUsers = getPersistentUsers();
+        const backupUser = backupUsers.find(
+          (u) => u.username.toLowerCase() === cleanInput || u.email.toLowerCase() === cleanInput
+        );
+        if (backupUser) {
+          user = await prisma.user.create({
+            data: {
+              username: backupUser.username,
+              email: backupUser.email,
+              passwordHash: backupUser.passwordHash,
+              avatarUrl: backupUser.avatarUrl,
+            }
+          });
+        }
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: 'No user account found with this email or username.' });
+      }
+
+      // Generate a 6-digit OTP
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes validity
+
+      resetCodes.set(cleanInput, { code, expiresAt, email: user.email });
+      resetCodes.set(user.email.toLowerCase(), { code, expiresAt, email: user.email });
+      resetCodes.set(user.username.toLowerCase(), { code, expiresAt, email: user.email });
+
+      console.log(`🔑 Verification code for ${user.username} (${user.email}): ${code}`);
+
+      return res.json({
+        message: 'Verification code sent successfully.',
+        email: user.email,
+        username: user.username,
+        code, // Returned for instant preview & verification
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || 'Failed to process forgot password request' });
+    }
+  }
+
+  static async resetPassword(req: Request, res: Response) {
+    try {
+      const { emailOrUsername, otp, newPassword } = req.body;
+
+      if (!emailOrUsername || !otp || !newPassword) {
+        return res.status(400).json({ error: 'Email/Username, verification code, and new password are required.' });
+      }
+
+      const cleanInput = emailOrUsername.trim().toLowerCase();
+      const cleanOtp = otp.trim();
+      const cleanPassword = newPassword.trim();
+
+      // Check OTP
+      const record = resetCodes.get(cleanInput);
+      if (!record || record.code !== cleanOtp) {
+        return res.status(400).json({ error: 'Invalid verification code. Please check and try again.' });
+      }
+
+      if (Date.now() > record.expiresAt) {
+        resetCodes.delete(cleanInput);
+        return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+      }
+
+      // Validate new strong password
+      const pwdCheck = validateStrongPassword(cleanPassword);
+      if (!pwdCheck.valid) {
+        return res.status(400).json({ error: pwdCheck.error });
+      }
+
+      // Find user
+      let user = await prisma.user.findFirst({
+        where: { OR: [{ email: record.email }, { username: cleanInput }] }
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: 'User account not found.' });
+      }
+
+      const newHash = await bcrypt.hash(cleanPassword, 10);
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newHash },
+        select: { id: true, username: true, email: true, avatarUrl: true, passwordHash: true },
+      });
+
+      // Update backup ledger
+      savePersistentUser({
+        username: updatedUser.username,
+        email: updatedUser.email,
+        passwordHash: updatedUser.passwordHash,
+        avatarUrl: updatedUser.avatarUrl || undefined,
+      });
+
+      // Clear used code
+      resetCodes.delete(cleanInput);
+      resetCodes.delete(record.email.toLowerCase());
+
+      const secret = process.env.JWT_SECRET || 'super-secret-vcs-jwt-key-2026';
+      const token = jwt.sign({ userId: updatedUser.id, username: updatedUser.username }, secret, { expiresIn: '7d' });
+
+      return res.json({
+        message: 'Password reset successfully! You are now logged in.',
+        token,
+        user: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          email: updatedUser.email,
+          avatarUrl: updatedUser.avatarUrl,
+        }
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || 'Failed to reset password.' });
     }
   }
 
