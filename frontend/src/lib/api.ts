@@ -1,17 +1,23 @@
 import axios from 'axios';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'https://flicko-vcs.onrender.com/api'
-    : 'http://localhost:5000/api');
+// Always target the live active Render PostgreSQL backend in production/browser
+function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:5000/api';
+    }
+    return 'https://flicko-vcs.onrender.com/api';
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'https://flicko-vcs.onrender.com/api';
+}
 
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getBaseUrl(),
 });
 
-// Interceptor to attach Authorization header
+// Dynamic request interceptor to guarantee the right backend URL and attach Authorization header
 api.interceptors.request.use((config) => {
+  config.baseURL = getBaseUrl();
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('vcs_token');
     if (token) {
