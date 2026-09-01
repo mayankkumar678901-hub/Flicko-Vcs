@@ -38,6 +38,23 @@ function savePersistentUser(user: { username: string; email: string; passwordHas
   }
 }
 
+export function validateStrongPassword(password: string): { valid: boolean; error?: string } {
+  if (!password || password.length < 8) {
+    return { valid: false, error: 'Password must be at least 8 characters long.' };
+  }
+  if (!/[a-zA-Z]/.test(password)) {
+    return { valid: false, error: 'Password must include at least one letter (a-z, A-Z).' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, error: 'Password must include at least one number (0-9).' };
+  }
+  // Must contain special characters such as ?, _, @, !, #, $, %, etc.
+  if (!/[?_@!#$%^&*()+\-=\[\]{};':"\\|,.<>\/~`]/.test(password)) {
+    return { valid: false, error: 'Password must include at least one special symbol (e.g. ?, _, @, !).' };
+  }
+  return { valid: true };
+}
+
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
@@ -50,6 +67,12 @@ export class AuthController {
       const cleanUsername = username.trim();
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
+
+      // Strong password validation
+      const pwdCheck = validateStrongPassword(cleanPassword);
+      if (!pwdCheck.valid) {
+        return res.status(400).json({ error: pwdCheck.error });
+      }
 
       // Fetch users from DB and persistent backups
       const dbUsers = await prisma.user.findMany();
@@ -270,6 +293,12 @@ export class AuthController {
         if (!isValid) {
           return res.status(400).json({ error: 'Current password is incorrect' });
         }
+
+        const pwdCheck = validateStrongPassword(newPassword.trim());
+        if (!pwdCheck.valid) {
+          return res.status(400).json({ error: pwdCheck.error });
+        }
+
         updateData.passwordHash = await bcrypt.hash(newPassword.trim(), 10);
       }
 

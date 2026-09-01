@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { UserPlus, Code, Eye, EyeOff, Lock, Mail, User as UserIcon } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Lock, Mail, User as UserIcon, Check, X, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -20,17 +20,39 @@ export default function RegisterPage() {
 
   const router = useRouter();
 
+  // Real-time password criteria
+  const hasMinLength = password.length >= 8;
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[?_@!#$%^&*()+\-=\[\]{};':"\\|,.<>\/~`]/.test(password);
+  const isStrong = hasMinLength && hasLetter && hasNumber && hasSpecial;
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match. Please verify your password.');
+    if (!hasMinLength) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
 
-    if (password.length < 4) {
-      setError('Password must be at least 4 characters long.');
+    if (!hasLetter) {
+      setError('Password must include at least one letter (a-z, A-Z).');
+      return;
+    }
+
+    if (!hasNumber) {
+      setError('Password must include at least one number (0-9).');
+      return;
+    }
+
+    if (!hasSpecial) {
+      setError('Password must include at least one special symbol (e.g. ?, _, @, !).');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match. Please verify your password.');
       return;
     }
 
@@ -61,8 +83,9 @@ export default function RegisterPage() {
         </div>
 
         {error && (
-          <div className="bg-red-950/60 border border-red-800 text-red-300 text-xs p-3.5 rounded-xl text-center leading-relaxed">
-            {error}
+          <div className="bg-red-950/60 border border-red-800 text-red-300 text-xs p-3.5 rounded-xl text-center leading-relaxed flex items-center space-x-2">
+            <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+            <span className="flex-1">{error}</span>
           </div>
         )}
 
@@ -103,7 +126,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Password
+              Password <span className="text-slate-500 font-normal">(8+ chars, numbers & symbols ?, _, @)</span>
             </label>
             <div className="relative">
               <input
@@ -112,7 +135,13 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2.5 pl-9 pr-10 rounded-xl text-sm focus:outline-none focus:border-sky-400"
+                className={`w-full bg-[#0a0d14] border text-white p-2.5 pl-9 pr-10 rounded-xl text-sm focus:outline-none transition ${
+                  password.length > 0
+                    ? isStrong
+                      ? 'border-emerald-500 focus:border-emerald-400'
+                      : 'border-amber-500/70 focus:border-amber-400'
+                    : 'border-slate-700 focus:border-sky-400'
+                }`}
               />
               <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
               <button
@@ -123,6 +152,36 @@ export default function RegisterPage() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+
+            {/* Real-time Password Strength Criteria */}
+            {password.length > 0 && (
+              <div className="mt-2.5 p-2.5 bg-slate-900/90 border border-slate-800 rounded-xl space-y-1.5 text-[11px]">
+                <div className="flex items-center justify-between font-semibold pb-1 border-b border-slate-800 text-slate-300">
+                  <span>Password Strength</span>
+                  <span className={isStrong ? 'text-emerald-400 flex items-center space-x-1' : 'text-amber-400'}>
+                    {isStrong ? 'Strong Password' : 'Incomplete'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1 pt-0.5">
+                  <div className={`flex items-center space-x-1.5 ${hasMinLength ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {hasMinLength ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>8+ characters</span>
+                  </div>
+                  <div className={`flex items-center space-x-1.5 ${hasLetter ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {hasLetter ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>Letters (a-z, A-Z)</span>
+                  </div>
+                  <div className={`flex items-center space-x-1.5 ${hasNumber ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {hasNumber ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>Numbers (0-9)</span>
+                  </div>
+                  <div className={`flex items-center space-x-1.5 ${hasSpecial ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {hasSpecial ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>Symbols (?, _, @, !)</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -136,7 +195,13 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#0a0d14] border border-slate-700 text-white p-2.5 pl-9 pr-10 rounded-xl text-sm focus:outline-none focus:border-sky-400"
+                className={`w-full bg-[#0a0d14] border text-white p-2.5 pl-9 pr-10 rounded-xl text-sm focus:outline-none transition ${
+                  confirmPassword.length > 0
+                    ? confirmPassword === password
+                      ? 'border-emerald-500 focus:border-emerald-400'
+                      : 'border-red-500/70 focus:border-red-400'
+                    : 'border-slate-700 focus:border-sky-400'
+                }`}
               />
               <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
               <button
@@ -147,6 +212,9 @@ export default function RegisterPage() {
                 {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {confirmPassword.length > 0 && confirmPassword !== password && (
+              <p className="text-[11px] text-red-400 mt-1">Passwords do not match</p>
+            )}
           </div>
 
           <button
