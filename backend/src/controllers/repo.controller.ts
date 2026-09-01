@@ -4,6 +4,7 @@ import fs from 'fs';
 import { prisma } from '../config/db';
 import { AuthRequest } from '../middleware/auth';
 import { GitService } from '../services/git.service';
+import { AiProjectGeneratorService } from '../services/ai-project-generator.service';
 
 const STORAGE_ROOT = process.env.REPOS_STORAGE_PATH || './repos_storage';
 
@@ -61,6 +62,119 @@ export class RepoController {
       return res.status(201).json({ repo });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Failed to create repository' });
+    }
+  }
+
+  static async generateAiRepo(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { prompt, name, isPrivate } = req.body;
+
+      if (!prompt || !prompt.trim()) {
+        return res.status(400).json({ error: 'AI prompt is required to generate a project' });
+      }
+
+      // Generate clean repo name if not provided
+      let cleanName = name
+        ? name.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '-')
+        : prompt
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .split(/\s+/)
+            .slice(0, 4)
+            .join('-');
+
+      if (!cleanName || cleanName.length < 2) {
+        cleanName = 'ai-app-' + Math.floor(Math.random() * 1000);
+      }
+
+      // Check if repo already exists
+      const existing = await prisma.repository.findFirst({
+        where: {
+          ownerId: req.user.userId,
+          name: cleanName,
+        },
+      });
+
+      if (existing) {
+        cleanName = `${cleanName}-${Math.floor(Math.random() * 1000)}`;
+      }
+
+      const ownerDir = req.user.username;
+      const absoluteRepoPath = path.resolve(STORAGE_ROOT, ownerDir, cleanName);
+      const branch = 'main';
+
+      // 1. Synthesize multi-file project files from AI prompt
+      const generated = AiProjectGeneratorService.generateProjectFromPrompt(prompt, cleanName, req.user.username);
+
+      // 2. Initialize Git repo
+      await GitService.initRepository(absoluteRepoPath, cleanName, generated.summary, branch);
+
+      // 3. Commit synthesized files with structured Git commits
+      await GitService.commitFileChange(
+        absoluteRepoPath,
+        branch,
+        'index.html',
+        generated['index.html'],
+        'feat(ui): add index.html structure',
+        req.user.username,
+        `${req.user.username}@flicko.dev`
+      );
+
+      await GitService.commitFileChange(
+        absoluteRepoPath,
+        branch,
+        'style.css',
+        generated['style.css'],
+        'style(theme): add responsive styling and animations',
+        req.user.username,
+        `${req.user.username}@flicko.dev`
+      );
+
+      await GitService.commitFileChange(
+        absoluteRepoPath,
+        branch,
+        'app.js',
+        generated['app.js'],
+        'feat(logic): implement interactive logic and state',
+        req.user.username,
+        `${req.user.username}@flicko.dev`
+      );
+
+      await GitService.commitFileChange(
+        absoluteRepoPath,
+        branch,
+        'README.md',
+        generated['README.md'],
+        'docs(readme): add project documentation and prompt info',
+        req.user.username,
+        `${req.user.username}@flicko.dev`
+      );
+
+      // 4. Create database record
+      const repo = await prisma.repository.create({
+        data: {
+          name: cleanName,
+          description: generated.summary,
+          isPrivate: Boolean(isPrivate),
+          defaultBranch: branch,
+          storagePath: absoluteRepoPath,
+          ownerId: req.user.userId,
+        },
+        include: {
+          owner: {
+            select: { id: true, username: true, avatarUrl: true },
+          },
+        },
+      });
+
+      return res.status(201).json({ repo, summary: generated.summary });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || 'Failed to generate AI repository' });
     }
   }
 

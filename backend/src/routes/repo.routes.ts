@@ -5,6 +5,7 @@ import { authenticateJWT, optionalJWT } from '../middleware/auth';
 const router = Router();
 
 router.post('/', authenticateJWT, RepoController.createRepo);
+router.post('/generate-ai', authenticateJWT, RepoController.generateAiRepo);
 router.get('/', optionalJWT, RepoController.listRepos);
 router.get('/:owner/:repo', optionalJWT, RepoController.getRepo);
 router.delete('/:owner/:repo', authenticateJWT, RepoController.deleteRepo);
