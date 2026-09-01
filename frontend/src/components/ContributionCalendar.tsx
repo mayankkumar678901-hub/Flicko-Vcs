@@ -33,7 +33,7 @@ export default function SimpleCalendar({ username }: { username?: string }) {
 
   if (!mounted) {
     return (
-      <div className="bg-[#121722] border border-slate-800 rounded-xl p-4 shadow-xl max-w-lg mx-auto text-center text-slate-500 text-xs">
+      <div className="bg-[#121722] border border-slate-800 rounded-xl p-4 shadow-xl w-full text-center text-slate-500 text-xs">
         Loading calendar...
       </div>
     );
@@ -98,7 +98,7 @@ export default function SimpleCalendar({ username }: { username?: string }) {
   }
 
   return (
-    <div className="bg-[#121722] border border-slate-800 rounded-xl p-4 sm:p-5 shadow-xl max-w-lg mx-auto space-y-3">
+    <div className="bg-[#121722] border border-slate-800 rounded-xl p-4 shadow-xl w-full space-y-3">
       {/* Header with Navigation & Streak */}
       <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
         <div className="flex items-center space-x-2">
@@ -154,7 +154,7 @@ export default function SimpleCalendar({ username }: { username?: string }) {
         ))}
       </div>
 
-      {/* Calendar Days Grid (Compact Blocks) */}
+      {/* Calendar Days Grid (Compact & Aligned) */}
       <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
         {calendarCells.map((cell, idx) => {
           if (!cell) {
