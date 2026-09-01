@@ -6,6 +6,23 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { UserPlus, Eye, EyeOff, Lock, Mail, User as UserIcon, Check, X, ShieldAlert, ShieldCheck } from 'lucide-react';
 
+function saveKnownAccount(username: string, email: string) {
+  try {
+    const list: Array<{ username: string; email: string }> = JSON.parse(
+      localStorage.getItem('flicko_known_accounts') || '[]'
+    );
+    const idx = list.findIndex(
+      (a) => a.username.toLowerCase() === username.toLowerCase() || a.email.toLowerCase() === email.toLowerCase()
+    );
+    if (idx >= 0) {
+      list[idx] = { username, email };
+    } else {
+      list.push({ username, email });
+    }
+    localStorage.setItem('flicko_known_accounts', JSON.stringify(list));
+  } catch {}
+}
+
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -61,6 +78,7 @@ export default function RegisterPage() {
     try {
       const res = await api.post('/auth/register', { username, email, password });
       localStorage.setItem('vcs_token', res.data.token);
+      saveKnownAccount(username, email);
       window.location.href = '/';
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registration failed');

@@ -6,6 +6,29 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { LogIn, Eye, EyeOff, Lock, User as UserIcon, ShieldAlert } from 'lucide-react';
 
+function getKnownAccounts(): Array<{ username: string; email: string }> {
+  try {
+    return JSON.parse(localStorage.getItem('flicko_known_accounts') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveKnownAccount(username: string, email: string) {
+  try {
+    const list = getKnownAccounts();
+    const idx = list.findIndex(
+      (a) => a.username.toLowerCase() === username.toLowerCase() || a.email.toLowerCase() === email.toLowerCase()
+    );
+    if (idx >= 0) {
+      list[idx] = { username, email };
+    } else {
+      list.push({ username, email });
+    }
+    localStorage.setItem('flicko_known_accounts', JSON.stringify(list));
+  } catch {}
+}
+
 export default function LoginPage() {
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -21,12 +44,45 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
+    const cleanInput = emailOrUsername.trim();
+    const cleanPassword = password.trim();
+
     try {
-      const res = await api.post('/auth/login', { emailOrUsername, password });
+      const res = await api.post('/auth/login', { emailOrUsername: cleanInput, password: cleanPassword });
       localStorage.setItem('vcs_token', res.data.token);
+      saveKnownAccount(res.data.user.username, res.data.user.email);
       window.location.href = '/';
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials');
+      const errMsg = err.response?.data?.error || '';
+
+      // Self-Healing Cloud Auto-Recovery: If cloud container was redeployed/restarted and SQLite was cleared
+      if (errMsg.includes('User not found') || errMsg.includes('Invalid credentials')) {
+        const known = getKnownAccounts();
+        const matched = known.find(
+          (a) =>
+            a.username.toLowerCase() === cleanInput.toLowerCase() ||
+            a.email.toLowerCase() === cleanInput.toLowerCase()
+        );
+
+        if (matched) {
+          try {
+            console.log('🔄 Re-syncing account with cloud container...');
+            const regRes = await api.post('/auth/register', {
+              username: matched.username,
+              email: matched.email,
+              password: cleanPassword,
+            });
+            localStorage.setItem('vcs_token', regRes.data.token);
+            saveKnownAccount(matched.username, matched.email);
+            window.location.href = '/';
+            return;
+          } catch (reSyncErr: any) {
+            console.warn('Auto-recovery re-sync failed:', reSyncErr.message);
+          }
+        }
+      }
+
+      setError(err.response?.data?.error || 'Invalid credentials. Please check your username/password.');
     } finally {
       setLoading(false);
     }
